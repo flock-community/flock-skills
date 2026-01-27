@@ -1,33 +1,34 @@
 # Flock Skills
 
-Custom skills plugin for Claude Code.
+A Claude Code plugin with skills for delivering Flock-quality software projects.
 
 ## Installation
 
-### Option 1: Install directly from Git URL
+### From marketplace
 
-```bash
-/plugin install https://github.com/flock-community/flock-skills.git
-```
+Add the marketplace and install the plugin:
 
-### Option 2: Via marketplace
-
-```bash
-# First, add this repo as a marketplace
+```shell
+# Add the marketplace
 /plugin marketplace add flock-community/flock-skills
 
-# Then install the plugin
+# Install the plugin
 /plugin install flock-skills@flock-community-flock-skills
 ```
 
-### Option 3: Clone and install locally
+Or from the CLI:
 
 ```bash
-# Clone the repository
-git clone https://github.com/flock-community/flock-skills.git ~/flock-skills
+claude plugin install flock-skills@flock-community-flock-skills
+```
 
-# Install from local path
-/plugin install ~/flock-skills
+### Local development
+
+Test the plugin locally with `--plugin-dir`:
+
+```bash
+git clone https://github.com/flock-community/flock-skills.git
+claude --plugin-dir ./flock-skills
 ```
 
 ## Available Skills
@@ -36,27 +37,38 @@ git clone https://github.com/flock-community/flock-skills.git ~/flock-skills
 
 Transform conversations into typed, validated specifications.
 
-**Invoke with:** `/flock-skills:specification`
-
-**Triggers:** specification, spec, requirements, feature spec, PRD, design doc, ADR
+**Invoke:** `/flock-skills:specification` or ask about "spec", "requirements", "PRD", "design doc"
 
 **Usage:**
 - Start a new project: "I want to build a todo app"
 - Define features: "Users can add tasks with due dates"
 - Record decisions: "We decided to use PostgreSQL because..."
 
+## Managing the Plugin
+
+```shell
+# Enable/disable the plugin
+/plugin enable flock-skills
+/plugin disable flock-skills
+
+# Uninstall
+/plugin uninstall flock-skills@flock-community-flock-skills
+```
+
 ## Plugin Structure
 
 ```
 flock-skills/
 ├── .claude-plugin/
-│   └── plugin.json       # Plugin manifest
+│   └── plugin.json           # Plugin manifest
+├── marketplace.json          # Marketplace catalog
 ├── skills/
-│   └── specification/    # Specification skill
-│       ├── SKILL.md
-│       ├── references/
-│       ├── scripts/
-│       └── templates/
+│   └── specification/
+│       ├── SKILL.md           # Skill definition
+│       ├── schemas/           # YAML type schemas
+│       ├── references/        # Reference documentation
+│       ├── scripts/           # Python utilities
+│       └── template/          # Project template
 └── README.md
 ```
 
@@ -66,37 +78,19 @@ Create a new folder under `skills/` with a `SKILL.md` file:
 
 ```
 skills/
-└── your-new-skill/
-    ├── SKILL.md          # Required - skill instructions
-    ├── references/       # Optional - supporting docs
-    └── scripts/          # Optional - helper scripts
+└── your-skill/
+    └── SKILL.md
 ```
 
 ### SKILL.md Format
 
 ```markdown
 ---
-name: your-skill-name
-description: |
-  What this skill does.
-  MANDATORY TRIGGERS: keyword1, keyword2
+name: your-skill
+description: What this skill does. Claude uses this to decide when to invoke it.
 ---
 
-# Your Skill Name
-
-Instructions for Claude...
+Your instructions for Claude here...
 ```
 
-## Verification
-
-After installation, verify the skill is loaded:
-
-1. Type `/` to see available skills
-2. Look for `flock-skills:specification` in the list
-3. Or ask Claude: "What skills do you have available?"
-
-## Uninstall
-
-```bash
-/plugin remove flock-skills
-```
+The skill becomes available as `/flock-skills:your-skill` after reinstalling or restarting Claude Code.

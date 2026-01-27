@@ -1,12 +1,11 @@
 {
   "name": "flock-skills",
   "version": "1.0.0",
-  "description": "Custom skills for Claude Code including specification writing and project planning",
+  "description": "Skills for coding agents to deliver Flock-quality software projects. Includes specification writing, project planning, and requirements management.",
   "author": {
     "name": "Flock Community"
   },
   "repository": "https://github.com/flock-community/flock-skills",
   "license": "MIT",
-  "keywords": ["specification", "requirements", "prd", "design-doc", "adr"],
-  "skills": "./skills/"
+  "keywords": ["specification", "requirements", "prd", "design-doc", "adr"]
 }
