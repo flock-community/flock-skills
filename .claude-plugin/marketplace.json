@@ -1,11 +1,16 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "flock-community-flock-skills",
   "description": "A collection of skills for coding agents to deliver Flock-quality software projects.",
+  "owner": {
+    "name": "Flock Community"
+  },
   "plugins": [
     {
       "name": "flock-skills",
       "description": "A collection of skills for coding agents to deliver Flock-quality software projects.",
-      "source": "https://github.com/flock-community/flock-skills.git"
+      "version": "1.0.0",
+      "source": "./"
     }
   ]
 }
