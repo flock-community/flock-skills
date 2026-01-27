@@ -4,9 +4,7 @@ A Claude Code plugin with skills for delivering Flock-quality software projects.
 
 ## Installation
 
-### From marketplace
-
-Add the marketplace and install the plugin:
+### Install
 
 ```shell
 # Add the marketplace
@@ -14,12 +12,6 @@ Add the marketplace and install the plugin:
 
 # Install the plugin
 /plugin install flock-skills@flock-community-flock-skills
-```
-
-Or from the CLI:
-
-```bash
-claude plugin install flock-skills@flock-community-flock-skills
 ```
 
 ### Local development
