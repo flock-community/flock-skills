@@ -7,5 +7,6 @@
   },
   "repository": "https://github.com/flock-community/flock-skills",
   "license": "MIT",
-  "keywords": ["specification", "requirements", "prd", "design-doc", "adr"]
+  "keywords": ["specification", "requirements", "prd", "design-doc", "adr"],
+  "skills": "./skills/"
 }
