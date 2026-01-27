@@ -1,0 +1,93 @@
+# Workflow schema - orchestration
+
+$extends: ../_base/entity
+
+name: Workflow
+description: Defines orchestration of agents and steps
+
+types:
+  Trigger:
+    type: union
+    variants:
+      - type: object
+        tag: manual
+        fields:
+          initiated_by:
+            type: ref
+            ref_type: Agent
+      - type: object
+        tag: schedule
+        fields:
+          cron:
+            type: string
+          timezone:
+            type: string
+            default: "UTC"
+      - type: object
+        tag: event
+        fields:
+          source:
+            type: string
+          event_type:
+            type: string
+
+  Transition:
+    type: object
+    fields:
+      from:
+        type: string
+        required: true
+      to:
+        type: string
+        required: true
+      condition:
+        type: string
+        required: true
+
+frontmatter:
+  $schema:
+    type: string
+    const: workflow
+
+  trigger:
+    type: Trigger
+    required: true
+
+  how:
+    type: list
+    items:
+      type: ref
+      ref_type: Agent
+    required: false
+    ai_validate: "Should reference agents involved in this workflow"
+
+sections:
+  - heading: Purpose
+    required: true
+    content: paragraph
+    ai_validate: "Must describe what this workflow accomplishes"
+
+  - heading: Trigger
+    required: true
+    content: paragraph
+    ai_validate: "Must describe what starts this workflow"
+
+  - heading: Steps
+    required: true
+    content: any
+    ai_validate: "Should show flow diagram (ASCII or Mermaid) or numbered steps"
+
+  - heading: Transitions
+    required: false
+    content: any
+    ai_validate: "Should include table with from, to, condition"
+
+  - heading: Error Handling
+    required: false
+    content: list
+    ai_validate: "Should describe what happens on failure"
+
+  - heading: Timeouts
+    required: false
+    content: list
+    ai_validate: "Should describe time limits for steps"

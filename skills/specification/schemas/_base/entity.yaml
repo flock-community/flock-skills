@@ -1,0 +1,27 @@
+# Base entity schema - all specs inherit from this
+
+name: BaseEntity
+description: Base schema for all specification types
+
+frontmatter:
+  id:
+    type: string
+    required: true
+    pattern: "^[A-Z]+-\\d{3}$"
+    ai_validate: "Must follow TYPE-NNN format (e.g., FEAT-001, DEC-003)"
+
+  title:
+    type: string
+    required: true
+    ai_validate: "Must be concise and descriptive"
+
+  status:
+    type: enum
+    values: [draft, active, deprecated]
+    default: draft
+
+  version:
+    type: string
+    required: true
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+    default: "0.1.0"

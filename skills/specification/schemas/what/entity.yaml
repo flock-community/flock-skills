@@ -1,0 +1,91 @@
+# Entity schema - domain object
+
+$extends: ../_base/entity
+
+name: Entity
+description: Defines a domain object with attributes, states, and relationships
+
+types:
+  Attribute:
+    type: object
+    fields:
+      name:
+        type: string
+        required: true
+      type:
+        type: string
+        required: true
+      required:
+        type: boolean
+        default: true
+      constraints:
+        type: string
+        required: false
+
+  Relationship:
+    type: object
+    fields:
+      entity:
+        type: ref
+        ref_type: Entity
+      cardinality:
+        type: enum
+        values: [one, many]
+      description:
+        type: string
+
+frontmatter:
+  $schema:
+    type: string
+    const: entity
+
+  plural:
+    type: string
+    required: false
+    ai_validate: "Should be the plural form of the entity name"
+
+  why:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: false
+
+  what:
+    type: list
+    items:
+      type: ref
+      ref_type: Entity
+    required: false
+    ai_validate: "Should reference related entities"
+
+sections:
+  - heading: Overview
+    required: true
+    content: paragraph
+    ai_validate: "Must clearly describe what this entity represents"
+
+  - heading: Attributes
+    required: true
+    content: any
+    ai_validate: "Must include table with attribute name, type, required, and constraints"
+
+  - heading: States
+    required: false
+    content: any
+    ai_validate: "Should show state machine diagram or describe lifecycle"
+
+  - heading: Relationships
+    required: false
+    content: any
+    ai_validate: "Should include table with entity, cardinality, description"
+
+  - heading: Business Rules
+    required: false
+    content: list
+    ai_validate: "Should list constraints specific to this entity"
+
+  - heading: Invariants
+    required: false
+    content: list
+    ai_validate: "Should list things that are always true about this entity"

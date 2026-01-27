@@ -1,0 +1,104 @@
+# Feature schema - capability with scenarios
+
+$extends: ../_base/entity
+
+$imports:
+  - from: ../common
+    types: [Priority]
+
+name: Feature
+description: Defines a capability with concrete scenarios
+
+types:
+  Scenario:
+    type: object
+    fields:
+      given:
+        type: string
+        required: true
+      when:
+        type: string
+        required: true
+      then:
+        type: list
+        items: string
+        min: 1
+
+frontmatter:
+  $schema:
+    type: string
+    const: feature
+
+  status:
+    type: enum
+    values: [proposed, approved, active, deprecated]
+    default: proposed
+
+  priority:
+    type: Priority
+    default: medium
+
+  why:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: false
+    ai_validate: "Should reference goals, personas, constraints"
+
+  what:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: false
+    ai_validate: "Should reference entities and rules"
+
+  how:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: false
+    ai_validate: "Should reference agents and skills for implementation"
+
+sections:
+  - heading: Context
+    required: true
+    content: paragraph
+    ai_validate: "Must explain why this feature exists"
+
+  - heading: Goals
+    required: true
+    content: list
+    min_items: 1
+    ai_validate: "Must use RFC 2119 language (MUST/SHOULD/MAY)"
+
+  - heading: Non-Goals
+    required: false
+    content: list
+    ai_validate: "Should explicitly state what is out of scope"
+
+  - heading: Rules and Scenarios
+    required: true
+    content: none
+    sections:
+      - pattern: "Rule: *"
+        required: true
+        content: list
+        ai_validate: "Each scenario must follow Given/When/Then format"
+
+  - heading: Edge Cases
+    required: false
+    content: list
+    ai_validate: "Should describe boundary conditions and how to handle them"
+
+  - heading: Rabbit Holes
+    required: false
+    content: list
+    ai_validate: "Should identify complexity traps to avoid"
+
+  - heading: Hotspots
+    required: false
+    content: list
+    ai_validate: "Should list unresolved questions as checkboxes"

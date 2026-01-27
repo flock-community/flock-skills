@@ -1,0 +1,61 @@
+# Vision schema - project purpose and success criteria
+
+$extends: ../_base/entity
+
+$imports:
+  - from: ../common
+    types: [Metric]
+
+name: Vision
+description: Defines why a project exists and what success looks like
+
+frontmatter:
+  $schema:
+    type: string
+    const: vision
+
+  personas:
+    type: list
+    items:
+      type: ref
+      ref_type: Persona
+    required: false
+    ai_validate: "Must reference existing persona specs"
+
+  success_metrics:
+    type: list
+    items: string
+    min: 1
+    ai_validate: "Each metric should be measurable (SMART)"
+
+sections:
+  - heading: Purpose
+    required: true
+    content: paragraph
+    ai_validate: "Must clearly state the problem being solved and why it matters"
+
+  - heading: Target
+    required: true
+    content: paragraph
+    ai_validate: "Must describe who benefits and why they care"
+
+  - heading: Core Value
+    required: true
+    content: paragraph
+    ai_validate: "Must articulate unique value proposition in one clear statement"
+
+  - heading: Success Criteria
+    required: true
+    content: list
+    min_items: 2
+    ai_validate: "Each criterion must be specific and measurable"
+
+  - heading: Non-Goals
+    required: false
+    content: list
+    ai_validate: "Must explicitly state what is out of scope"
+
+  - heading: Constraints
+    required: false
+    content: list
+    ai_validate: "Should reference constraint specs or describe key limitations"

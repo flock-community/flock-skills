@@ -1,0 +1,50 @@
+# Rule schema - business constraint
+
+$extends: ../_base/entity
+
+name: Rule
+description: Defines a business constraint or policy
+
+frontmatter:
+  $schema:
+    type: string
+    const: rule
+
+  priority:
+    type: number
+    required: false
+    ai_validate: "Lower number = higher priority"
+
+  applies_to:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: true
+    ai_validate: "Must reference entities or features this rule affects"
+
+sections:
+  - heading: Statement
+    required: true
+    content: paragraph
+    ai_validate: "Must state the rule clearly in plain language"
+
+  - heading: Condition
+    required: true
+    content: paragraph
+    ai_validate: "Must describe when this rule applies"
+
+  - heading: Action
+    required: true
+    content: paragraph
+    ai_validate: "Must describe what happens when the condition is met"
+
+  - heading: Exceptions
+    required: false
+    content: list
+    ai_validate: "Should describe when the rule does NOT apply"
+
+  - heading: Examples
+    required: false
+    content: any
+    ai_validate: "Should include concrete examples, ideally as a table"

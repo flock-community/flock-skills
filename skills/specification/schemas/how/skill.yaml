@@ -1,0 +1,67 @@
+# Skill schema - reusable pattern
+
+$extends: ../_base/entity
+
+name: Skill
+description: Defines a reusable pattern for work
+
+types:
+  IO:
+    type: object
+    fields:
+      name:
+        type: string
+        required: true
+      type:
+        type: string
+        required: true
+
+frontmatter:
+  $schema:
+    type: string
+    const: skill
+
+  inputs:
+    type: list
+    items: IO
+    required: false
+
+  outputs:
+    type: list
+    items: IO
+    required: false
+
+sections:
+  - heading: Purpose
+    required: true
+    content: paragraph
+    ai_validate: "Must describe what this skill accomplishes"
+
+  - heading: Prerequisites
+    required: false
+    content: list
+    ai_validate: "Should list what's needed before starting"
+
+  - heading: Steps
+    required: true
+    content: list
+    min_items: 2
+    ai_validate: "Must be numbered steps describing how to do it"
+
+  - heading: Examples
+    required: false
+    content: none
+    sections:
+      - pattern: "*"
+        content: any
+        ai_validate: "Should include worked examples with code"
+
+  - heading: Variations
+    required: false
+    content: list
+    ai_validate: "Should describe different approaches"
+
+  - heading: Anti-patterns
+    required: false
+    content: list
+    ai_validate: "Should describe what to avoid"

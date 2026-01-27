@@ -1,0 +1,43 @@
+# Common types shared across schemas
+
+$exports:
+  - Status from ./status
+  - Priority from ./status
+  - Metric from ./metrics
+  - Ref from ./refs
+
+types:
+  Status:
+    type: enum
+    values: [draft, active, deprecated]
+
+  Priority:
+    type: enum
+    values: [critical, high, medium, low]
+
+  Metric:
+    type: object
+    fields:
+      name:
+        type: string
+        required: true
+      target:
+        type: string
+        required: true
+      current:
+        type: string
+        required: false
+
+  Ref:
+    type: generic
+    params: [T]
+    definition:
+      type: ref
+      ref_type: T
+
+  List:
+    type: generic
+    params: [T]
+    definition:
+      type: list
+      items: T

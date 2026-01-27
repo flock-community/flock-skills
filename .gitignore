@@ -1,0 +1,30 @@
+# Simulation runs and testing
+**/testing/simulation-*/
+**/simulations/
+
+# Generated files
+**/specs-index.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.env
+.venv
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log

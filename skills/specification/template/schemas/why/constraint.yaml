@@ -1,0 +1,60 @@
+# Constraint schema - boundaries we operate within
+
+$extends: ../_base/entity
+
+name: Constraint
+description: Defines boundaries we must operate within
+
+frontmatter:
+  $schema:
+    type: string
+    const: constraint
+
+  status:
+    type: enum
+    values: [active, lifted]
+    default: active
+
+  type:
+    type: enum
+    values: [legal, technical, business, resource, time]
+    required: true
+
+  applies_to:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: false
+    ai_validate: "Should reference specs this constraint affects"
+
+  expiration:
+    type: date
+    required: false
+
+sections:
+  - heading: Constraint
+    required: true
+    content: paragraph
+    ai_validate: "Must clearly state the boundary or limitation"
+
+  - heading: Rationale
+    required: true
+    content: paragraph
+    ai_validate: "Must explain why this constraint exists"
+
+  - heading: Implications
+    required: true
+    content: list
+    min_items: 1
+    ai_validate: "Must describe what this means for the project"
+
+  - heading: Verification
+    required: false
+    content: list
+    ai_validate: "Should describe how we ensure compliance"
+
+  - heading: Expiration
+    required: false
+    content: paragraph
+    ai_validate: "Should describe when/if this constraint lifts"

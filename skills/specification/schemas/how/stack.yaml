@@ -1,0 +1,53 @@
+# Stack schema - technology choices
+
+$extends: ../_base/entity
+
+name: Stack
+description: Documents technology choices
+
+frontmatter:
+  $schema:
+    type: string
+    const: stack
+
+  why:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: false
+    ai_validate: "Should reference decisions and constraints that drove these choices"
+
+sections:
+  - heading: Languages
+    required: true
+    content: list
+    min_items: 1
+    ai_validate: "Must list programming languages used"
+
+  - heading: Frameworks
+    required: true
+    content: list
+    min_items: 1
+    ai_validate: "Must list major frameworks"
+
+  - heading: Infrastructure
+    required: true
+    content: list
+    min_items: 1
+    ai_validate: "Must list deployment platform and infrastructure"
+
+  - heading: Data
+    required: false
+    content: list
+    ai_validate: "Should list databases, caching, storage"
+
+  - heading: Rationale
+    required: false
+    content: list
+    ai_validate: "Should link to decision specs or explain key choices"
+
+  - heading: Development
+    required: false
+    content: any
+    ai_validate: "Should describe local setup and tooling"

@@ -1,0 +1,63 @@
+# Lens schema - evaluation criteria
+
+$extends: ../_base/entity
+
+name: Lens
+description: Defines evaluation criteria for quality assessment
+
+types:
+  Criterion:
+    type: object
+    fields:
+      name:
+        type: string
+        required: true
+      weight:
+        type: number
+        required: true
+      description:
+        type: string
+        required: false
+
+frontmatter:
+  $schema:
+    type: string
+    const: lens
+
+  criteria:
+    type: list
+    items: Criterion
+    min: 1
+    ai_validate: "Weights should sum to 100"
+
+sections:
+  - heading: Perspective
+    required: true
+    content: paragraph
+    ai_validate: "Must describe what this lens evaluates"
+
+  - heading: Criteria
+    required: true
+    content: any
+    ai_validate: "Must include table with criterion, weight, description"
+
+  - heading: Scoring
+    required: true
+    content: any
+    ai_validate: "Must describe how to rate (e.g., 1-5 scale with meanings)"
+
+  - heading: Thresholds
+    required: false
+    content: list
+    ai_validate: "Should describe pass/fail levels"
+
+  - heading: Examples
+    required: false
+    content: none
+    sections:
+      - heading: Good
+        content: any
+        ai_validate: "Should show example of high-scoring work"
+      - heading: Bad
+        content: any
+        ai_validate: "Should show example of low-scoring work"

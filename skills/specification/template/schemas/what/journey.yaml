@@ -1,0 +1,59 @@
+# Journey schema - end-to-end user flow
+
+$extends: ../_base/entity
+
+name: Journey
+description: Defines an end-to-end user flow spanning multiple features
+
+frontmatter:
+  $schema:
+    type: string
+    const: journey
+
+  why:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: false
+    ai_validate: "Should reference personas this journey serves"
+
+  what:
+    type: list
+    items:
+      type: ref
+      ref_type: any
+    required: false
+    ai_validate: "Should reference features involved in this journey"
+
+sections:
+  - heading: Goal
+    required: true
+    content: paragraph
+    ai_validate: "Must describe what the user accomplishes"
+
+  - heading: Entry Points
+    required: false
+    content: list
+    ai_validate: "Should describe how users start this journey"
+
+  - heading: Steps
+    required: true
+    content: list
+    min_items: 2
+    ai_validate: "Must be numbered steps describing the user's path"
+
+  - heading: Success Outcome
+    required: true
+    content: paragraph
+    ai_validate: "Must describe what success looks like"
+
+  - heading: Alternative Paths
+    required: false
+    content: list
+    ai_validate: "Should describe variations of the main flow"
+
+  - heading: Failure Paths
+    required: false
+    content: list
+    ai_validate: "Should describe error handling and recovery"

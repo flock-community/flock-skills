@@ -1,0 +1,54 @@
+# Persona schema - who we serve
+
+$extends: ../_base/entity
+
+name: Persona
+description: Defines who we serve, their context, goals, and frustrations
+
+frontmatter:
+  $schema:
+    type: string
+    const: persona
+
+  role:
+    type: string
+    required: true
+    ai_validate: "Must describe persona's role or identity"
+
+  tech_comfort:
+    type: enum
+    values: [low, medium, high]
+    required: false
+
+sections:
+  - heading: Identity
+    required: true
+    content: paragraph
+    ai_validate: "Must describe who this person is and their context"
+
+  - heading: Goals
+    required: true
+    content: list
+    min_items: 2
+    ai_validate: "Each goal must be from the persona's perspective"
+
+  - heading: Frustrations
+    required: true
+    content: list
+    min_items: 1
+    ai_validate: "Must describe current pain points"
+
+  - heading: Capabilities
+    required: false
+    content: list
+    ai_validate: "Should list what they can do or know"
+
+  - heading: Scenarios
+    required: false
+    content: list
+    ai_validate: "Should describe typical usage situations"
+
+  - heading: Quotes
+    required: false
+    content: list
+    ai_validate: "Should be representative statements in first person"

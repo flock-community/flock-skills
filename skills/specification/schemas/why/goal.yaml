@@ -1,0 +1,69 @@
+# Goal schema - measurable outcome we're pursuing
+
+$extends: ../_base/entity
+
+$imports:
+  - from: ../common
+    types: [Metric]
+
+name: Goal
+description: Defines a measurable outcome we're pursuing
+
+frontmatter:
+  $schema:
+    type: string
+    const: goal
+
+  status:
+    type: enum
+    values: [draft, active, achieved, abandoned]
+    default: draft
+
+  vision:
+    type: ref
+    ref_type: Vision
+    required: false
+
+  personas:
+    type: list
+    items:
+      type: ref
+      ref_type: Persona
+    required: false
+
+  metrics:
+    type: list
+    items: Metric
+    min: 1
+    ai_validate: "Each metric must have name, target, and optionally current value"
+
+  timeframe:
+    type: string
+    required: false
+    ai_validate: "Should be specific (e.g., 'Q1 2025', 'by March 15')"
+
+sections:
+  - heading: Objective
+    required: true
+    content: paragraph
+    ai_validate: "Must clearly state what we're trying to achieve"
+
+  - heading: Metrics
+    required: true
+    content: any
+    ai_validate: "Must include table or list of metrics with targets"
+
+  - heading: Rationale
+    required: true
+    content: paragraph
+    ai_validate: "Must explain why this goal matters and its business impact"
+
+  - heading: Key Results
+    required: false
+    content: list
+    ai_validate: "Each result should be a specific outcome indicating success"
+
+  - heading: Dependencies
+    required: false
+    content: list
+    ai_validate: "Should list what must be true for this goal to succeed"

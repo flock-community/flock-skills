@@ -1,0 +1,61 @@
+# Decision schema - key choice with rationale (ADR-style)
+
+$extends: ../_base/entity
+
+name: Decision
+description: Records a key choice with its rationale (ADR-style)
+
+frontmatter:
+  $schema:
+    type: string
+    const: decision
+
+  status:
+    type: enum
+    values: [proposed, accepted, deprecated, superseded]
+    default: proposed
+
+  date:
+    type: date
+    required: true
+
+  deciders:
+    type: list
+    items: string
+    min: 1
+    ai_validate: "Must list who was involved in the decision"
+
+  supersedes:
+    type: ref
+    ref_type: Decision
+    required: false
+
+  superseded_by:
+    type: ref
+    ref_type: Decision
+    required: false
+
+sections:
+  - heading: Context
+    required: true
+    content: paragraph
+    ai_validate: "Must describe the situation that requires a decision"
+
+  - heading: Decision
+    required: true
+    content: paragraph
+    ai_validate: "Must clearly state what was decided"
+
+  - heading: Options Considered
+    required: false
+    content: none
+    sections:
+      - pattern: "*"
+        content: list
+        ai_validate: "Each option should list pros and cons"
+
+  - heading: Consequences
+    required: true
+    content: list
+    min_items: 1
+    ai_validate: "Must include both positive and negative consequences"
