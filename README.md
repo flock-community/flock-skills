@@ -1,10 +1,43 @@
 # Flock Skills
 
-A Claude Code plugin with skills for delivering Flock-quality software projects.
+## Why
+
+AI coding assistants build what you ask literally, not what you need.
+Specifications bridge intent and implementation — structured, validated,
+traceable requirements that AI agents can execute precisely.
+
+## What
+
+7 commands for creating, reviewing, and maintaining typed specifications.
+Specs are markdown files with YAML frontmatter, organized in three layers
+(Why / What / How), progressively validated from simple files to
+schema-validated, implementation-tracked, code-linked systems.
+
+## Commands
+
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `/spec` | Build new specs from conversation | "I want to build a todo app" |
+| `/spec-init` | Set up spec directory structure | "Set up specs for this project" |
+| `/spec-review` | Review specs for quality and completeness | "Check my specs for problems" |
+| `/spec-deepen` | Deepen specs through reflection and questioning | "What's missing from my specs?" |
+| `/spec-reverse` | Reverse engineer code into specs | "Generate specs from this codebase" |
+| `/spec-refactor` | Restructure, migrate, or import specs | "Split this large spec" |
+| `/spec-status` | Show spec system state, health, and drift | "How are my specs doing?" |
+
+## Integration Levels
+
+| Level | Name | What it adds |
+|-------|------|-------------|
+| 1 | Single file | One `.md` spec with YAML frontmatter |
+| 2 | Hierarchy | Specs organized in `specs/why/`, `specs/what/`, `specs/how/` |
+| 3 | Schema-validated | YAML schemas define structure + AI validation prompts |
+| 4 | Implementation-tracked | `.implemented.json` maps spec paths to git blob hashes |
+| 5 | Code-linked | Code annotations `// @spec FEAT-001#a1b2c3d4` reference spec ID + version hash |
+
+Start at any level. Use `/spec-init` to set up or upgrade.
 
 ## Installation
-
-### Install
 
 ```shell
 # Add the marketplace
@@ -16,34 +49,16 @@ A Claude Code plugin with skills for delivering Flock-quality software projects.
 
 ### Local development
 
-Test the plugin locally with `--plugin-dir`:
-
 ```bash
 git clone https://github.com/flock-community/flock-skills.git
 claude --plugin-dir ./flock-skills
 ```
 
-## Available Skills
-
-### specification
-
-Transform conversations into typed, validated specifications.
-
-**Invoke:** `/flock-skills:specification` or ask about "spec", "requirements", "PRD", "design doc"
-
-**Usage:**
-- Start a new project: "I want to build a todo app"
-- Define features: "Users can add tasks with due dates"
-- Record decisions: "We decided to use PostgreSQL because..."
-
-## Managing the Plugin
+### Managing the plugin
 
 ```shell
-# Enable/disable the plugin
 /plugin enable flock-skills
 /plugin disable flock-skills
-
-# Uninstall
 /plugin uninstall flock-skills@flock-community-flock-skills
 ```
 
@@ -52,37 +67,20 @@ Transform conversations into typed, validated specifications.
 ```
 flock-skills/
 ├── .claude-plugin/
-│   └── plugin.json           # Plugin manifest
-├── marketplace.json          # Marketplace catalog
+│   ├── plugin.json
+│   └── marketplace.json
 ├── skills/
-│   └── specification/
-│       ├── SKILL.md           # Skill definition
-│       ├── schemas/           # YAML type schemas
-│       ├── references/        # Reference documentation
-│       ├── scripts/           # Python utilities
-│       └── template/          # Project template
+│   ├── specification/           # Shared knowledge base
+│   │   ├── schemas/             # 15 YAML type schemas
+│   │   ├── references/          # System docs and guides
+│   │   ├── scripts/             # Python utilities
+│   │   └── template/            # Project template
+│   ├── spec/SKILL.md            # /spec command
+│   ├── spec-init/SKILL.md       # /spec-init command
+│   ├── spec-review/SKILL.md     # /spec-review command
+│   ├── spec-deepen/SKILL.md     # /spec-deepen command
+│   ├── spec-reverse/SKILL.md    # /spec-reverse command
+│   ├── spec-refactor/SKILL.md   # /spec-refactor command
+│   └── spec-status/SKILL.md     # /spec-status command
 └── README.md
 ```
-
-## Adding More Skills
-
-Create a new folder under `skills/` with a `SKILL.md` file:
-
-```
-skills/
-└── your-skill/
-    └── SKILL.md
-```
-
-### SKILL.md Format
-
-```markdown
----
-name: your-skill
-description: What this skill does. Claude uses this to decide when to invoke it.
----
-
-Your instructions for Claude here...
-```
-
-The skill becomes available as `/flock-skills:your-skill` after reinstalling or restarting Claude Code.

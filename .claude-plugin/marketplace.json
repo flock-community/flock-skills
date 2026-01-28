@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "flock-skills",
-      "description": "Specification skill: transform conversations into typed, validated specs (PRD, design docs, ADRs).",
+      "description": "7 spec commands (/spec, /spec-init, /spec-review, /spec-deepen, /spec-reverse, /spec-refactor, /spec-status) for creating, validating, and maintaining typed specifications with progressive integration from single files to code-linked systems.",
       "version": "1.0.0",
       "source": "./"
     }
