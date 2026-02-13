@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "flock-skills",
-      "description": "7 spec commands (/spec, /spec-init, /spec-review, /spec-deepen, /spec-reverse, /spec-refactor, /spec-status) for creating, validating, and maintaining typed specifications with progressive integration from single files to code-linked systems.",
+      "description": "9 commands: 7 spec commands (/spec, /spec-init, /spec-review, /spec-deepen, /spec-reverse, /spec-refactor, /spec-status) for specifications, plus /setup-frontend-react and /setup-backend-spring for project scaffolding.",
       "version": "1.0.0",
       "source": "./"
     }

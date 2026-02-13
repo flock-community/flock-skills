@@ -1,0 +1,242 @@
+# {Project Name}
+
+A Kotlin Spring Boot backend with hexagonal architecture.
+
+## Tech Stack
+
+- **Kotlin** - Primary language
+- **Spring Boot** - Application framework
+- **Gradle Kotlin DSL** - Build tool
+- **Arrow-kt** - Functional programming library
+- **Detekt** - Static analysis with hexagonal architecture rules
+
+## Getting Started
+
+### Prerequisites
+
+- JDK 21+
+- Gradle 8+ (or use included wrapper)
+
+### Running the Application
+
+```bash
+./gradlew bootRun
+```
+
+The application starts at [http://localhost:8080](http://localhost:8080).
+
+### Building
+
+```bash
+./gradlew build
+```
+
+### Running Tests
+
+```bash
+./gradlew test
+```
+
+## Project Structure
+
+```
+{project-name}/
+├── domain/                 # Core business logic (no framework dependencies)
+│   └── src/main/kotlin/
+│       └── {package}/domain/
+│           ├── {entity}/   # Entity modules
+│           │   ├── {Entity}.kt
+│           │   ├── {Entity}Id.kt
+│           │   └── {Entity}Repository.kt (port)
+│           └── ...
+│
+├── api/                    # REST controllers and DTOs
+│   └── src/main/kotlin/
+│       └── {package}/api/
+│           ├── {entity}/
+│           │   ├── {Entity}Controller.kt
+│           │   ├── {Entity}Request.kt
+│           │   └── {Entity}Response.kt
+│           └── ...
+│
+├── adapters/               # Port implementations
+│   └── {adapter-name}/
+│       └── src/main/kotlin/
+│           └── {package}/adapters/{adapter-name}/
+│               ├── {Entity}RepositoryAdapter.kt
+│               ├── {Entity}Entity.kt (persistence model)
+│               └── {Entity}Mapper.kt
+│
+├── app/                    # Application entry point
+│   └── src/
+│       ├── main/kotlin/
+│       │   └── {package}/
+│       │       └── {ProjectName}Application.kt
+│       └── main/resources/
+│           └── application.properties
+│
+├── build.gradle.kts        # Root build configuration
+└── settings.gradle.kts     # Module includes
+```
+
+## Architecture
+
+This project follows **Hexagonal Architecture** (Ports & Adapters), ensuring:
+
+- **Domain isolation** - Business logic has no framework dependencies
+- **Testability** - Domain can be tested without infrastructure
+- **Flexibility** - Adapters can be swapped without changing domain
+
+### Module Dependencies
+
+```
+┌─────────────────────────────────────────────┐
+│                    app                       │
+│         (wires everything together)          │
+└─────────────┬───────────────┬───────────────┘
+              │               │
+              ▼               ▼
+┌─────────────────┐   ┌───────────────────────┐
+│       api       │   │       adapters/*      │
+│  (controllers)  │   │  (port implementations)│
+└────────┬────────┘   └───────────┬───────────┘
+         │                        │
+         └──────────┬─────────────┘
+                    │
+                    ▼
+          ┌─────────────────┐
+          │     domain      │
+          │ (business logic)│
+          └─────────────────┘
+```
+
+| Module | Can Import | Cannot Import |
+|--------|------------|---------------|
+| `domain` | Nothing (leaf) | api, adapters, app |
+| `api` | domain | adapters, app |
+| `adapters/*` | domain | api, other adapters, app |
+| `app` | Everything | - |
+
+Detekt enforces these boundaries at build time.
+
+### Domain Layer
+
+The domain module contains pure business logic:
+
+- **Entities** - Core business objects (immutable data classes)
+- **Value Objects** - Typed wrappers using `@JvmInline value class`
+- **Ports** - Interfaces defining required operations
+- **Domain Services** - Business logic that spans multiple entities
+
+```kotlin
+// Value object
+@JvmInline
+value class UserId(val value: String)
+
+// Entity
+data class User(
+    val id: UserId,
+    val name: String,
+    val email: String
+)
+
+// Port (interface)
+interface UserRepository {
+    suspend fun findById(id: UserId): User?
+    suspend fun save(user: User): User
+}
+```
+
+### API Layer
+
+REST controllers that expose domain operations:
+
+```kotlin
+@RestController
+@RequestMapping("/api/users")
+class UserController(
+    private val userRepository: UserRepository
+) {
+    @GetMapping("/{id}")
+    suspend fun getUser(@PathVariable id: String): User? =
+        userRepository.findById(UserId(id))
+}
+```
+
+### Adapters Layer
+
+Implementations of domain ports:
+
+```kotlin
+@Repository
+class UserRepositoryAdapter(
+    private val jpaRepository: UserJpaRepository
+) : UserRepository {
+
+    override suspend fun findById(id: UserId): User? =
+        jpaRepository.findById(id.value)?.toDomain()
+
+    override suspend fun save(user: User): User =
+        jpaRepository.save(user.toEntity()).toDomain()
+}
+```
+
+## Adding a New Feature
+
+### 1. Define Domain Types
+
+Create entities and ports in `domain/`:
+
+```kotlin
+// domain/src/main/kotlin/{package}/domain/order/Order.kt
+data class Order(val id: OrderId, val items: List<OrderItem>)
+
+// domain/src/main/kotlin/{package}/domain/order/OrderRepository.kt
+interface OrderRepository {
+    suspend fun findById(id: OrderId): Order?
+}
+```
+
+### 2. Create API Endpoints
+
+Add controllers in `api/`:
+
+```kotlin
+// api/src/main/kotlin/{package}/api/order/OrderController.kt
+@RestController
+@RequestMapping("/api/orders")
+class OrderController(private val orderRepository: OrderRepository) {
+    // ...
+}
+```
+
+### 3. Implement Adapters
+
+Create port implementations in `adapters/`:
+
+```kotlin
+// adapters/postgres/src/main/kotlin/{package}/adapters/postgres/OrderRepositoryAdapter.kt
+@Repository
+class OrderRepositoryAdapter(...) : OrderRepository {
+    // ...
+}
+```
+
+### 4. Wire in App
+
+Adapters are auto-discovered via Spring component scanning.
+
+## Scripts Reference
+
+| Script | Description |
+|--------|-------------|
+| `./gradlew build` | Build all modules and run Detekt |
+| `./gradlew bootRun` | Run the application |
+| `./gradlew test` | Run all tests |
+| `./gradlew detekt` | Run Detekt static analysis |
+| `./gradlew :domain:test` | Run domain tests only |
+| `./gradlew :api:test` | Run API tests only |
+
+## License
+
+MIT

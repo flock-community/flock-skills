@@ -1,0 +1,139 @@
+# {Project Name}
+
+A modern React application built with Vite, TypeScript, TanStack Router, TanStack Query, and Ant Design.
+
+## Tech Stack
+
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **TanStack Router** - Type-safe file-based routing
+- **TanStack Query** - Server state management
+- **Ant Design** - UI component library
+- **Storybook** - Component development and documentation
+- **ESLint + Prettier** - Code quality and formatting
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+
+### Installation
+
+```bash
+npm install
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Build
+
+```bash
+npm run build
+```
+
+### Other Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run typecheck` | Run TypeScript compiler check |
+| `npm run lint` | Lint and auto-fix with ESLint |
+| `npm run format` | Format code with Prettier |
+| `npm run storybook` | Start Storybook dev server |
+| `npm run storybook:build` | Build Storybook for deployment |
+
+## Project Structure
+
+```
+src/
+├── theme/           # Design tokens and theme configuration
+├── shared/
+│   ├── ui/          # Reusable UI components
+│   └── lib/         # Utility functions
+├── features/        # Feature modules
+├── hooks/           # Shared React hooks
+├── routes/          # File-based routes (TanStack Router)
+└── main.tsx         # Application entry point
+```
+
+## Architecture
+
+This project follows a layered architecture with enforced import boundaries:
+
+- **theme/** - Design tokens (colors, typography, spacing). Leaf layer with no imports.
+- **shared/lib/** - Pure utility functions with no dependencies.
+- **shared/ui/** - Reusable UI components. Can import from theme and shared/lib.
+- **features/** - Feature-specific modules. Can import from theme and shared, but not other features.
+- **hooks/** - Shared React hooks. Can import from theme and shared/lib.
+- **routes/** - Page components. Can import from all layers.
+
+ESLint enforces these boundaries automatically.
+
+## Design System
+
+This project uses a token-based design system built on Ant Design. Never hardcode colors, fonts, or spacing values.
+
+```tsx
+import { useDesignTokens } from '@/theme'
+
+function MyComponent() {
+  const { token } = useDesignTokens()
+
+  return (
+    <div style={{
+      color: token.colorPrimary,
+      padding: token.padding
+    }}>
+      Hello
+    </div>
+  )
+}
+```
+
+See `src/theme/tokens/` for available tokens.
+
+## Storybook
+
+Develop and document UI components in isolation:
+
+```bash
+npm run storybook
+```
+
+Opens at [http://localhost:6006](http://localhost:6006).
+
+Components in `src/shared/ui/` include stories for interactive documentation and visual testing.
+
+## Adding Routes
+
+Create a new file in `src/routes/`:
+
+```tsx
+// src/routes/about.tsx
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/about')({
+  component: AboutPage,
+})
+
+function AboutPage() {
+  return <div>About</div>
+}
+```
+
+Routes are automatically registered when the dev server is running.
+
+## License
+
+MIT

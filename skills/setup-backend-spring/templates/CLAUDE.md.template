@@ -1,0 +1,141 @@
+# {Project Name}
+
+Kotlin Spring Boot backend with hexagonal architecture. Detekt enforces module boundaries.
+
+## Scripts
+
+```bash
+./gradlew build      # Build all modules + Detekt
+./gradlew bootRun    # Run application
+./gradlew test       # Run all tests
+./gradlew detekt     # Run Detekt only
+```
+
+## Architecture
+
+```
+├── domain/          # Business logic, entities, ports (no framework deps)
+├── api/             # REST controllers, DTOs
+├── adapters/        # Port implementations
+└── app/             # Entry point, wires all modules
+```
+
+### Module Dependency Rules
+
+| Module | Can Depend On | Cannot Depend On |
+|--------|---------------|------------------|
+| domain | (nothing) | api, adapters, app |
+| api | domain | adapters, app |
+| adapters/* | domain | api, other adapters, app |
+| app | domain, api, adapters/* | (none - entry point) |
+
+Detekt with hexagonal rules will catch violations at build time.
+
+## Domain Layer
+
+The domain module contains:
+- **Entities** - Core business objects (immutable, no framework annotations)
+- **Value Objects** - Typed wrappers using `@JvmInline value class`
+- **Ports** - Interfaces defining required operations (suffix: Port, Repository, Gateway, Client)
+- **Services** - Business logic orchestrating entities and ports
+
+Example domain entity:
+
+```kotlin
+package {GROUP_ID}.domain.user
+
+@JvmInline
+value class UserId(val value: String)
+
+data class User(
+    val id: UserId,
+    val name: String,
+    val email: String
+)
+```
+
+Example port:
+
+```kotlin
+package {GROUP_ID}.domain.user
+
+interface UserRepository {
+    suspend fun findById(id: UserId): User?
+    suspend fun save(user: User): User
+}
+```
+
+## API Layer
+
+REST controllers that depend only on domain:
+
+```kotlin
+package {GROUP_ID}.api.user
+
+import {GROUP_ID}.domain.user.UserRepository
+import org.springframework.web.bind.annotation.*
+
+@RestController
+@RequestMapping("/api/users")
+class UserController(
+    private val userRepository: UserRepository
+) {
+    @GetMapping("/{id}")
+    suspend fun getUser(@PathVariable id: String) =
+        userRepository.findById(UserId(id))
+}
+```
+
+## Adding an Adapter
+
+1. Create `adapters/{name}/build.gradle.kts` with `implementation(project(":domain"))`
+2. Add `include("adapters:{name}")` to settings.gradle.kts
+3. Add `implementation(project(":adapters:{name}"))` to app/build.gradle.kts
+4. Implement domain ports in the adapter
+
+Example adapter:
+
+```kotlin
+package {GROUP_ID}.adapters.postgres
+
+@Repository
+class UserRepositoryAdapter(
+    private val jpaRepository: UserJpaRepository
+) : UserRepository {
+    override suspend fun findById(id: UserId) =
+        jpaRepository.findById(id.value)?.toDomain()
+}
+```
+
+## Common Patterns
+
+### Error Handling with Arrow
+
+```kotlin
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+
+sealed class UserError {
+    data object NotFound : UserError()
+    data class ValidationFailed(val message: String) : UserError()
+}
+
+suspend fun findUser(id: UserId): Either<UserError, User> =
+    userRepository.findById(id)?.right()
+        ?: UserError.NotFound.left()
+```
+
+### Testing
+
+```kotlin
+@Test
+fun `should find user by id`() = runTest {
+    val user = User(UserId("1"), "Test", "test@example.com")
+    val repository = InMemoryUserRepository(listOf(user))
+
+    val result = repository.findById(UserId("1"))
+
+    assertEquals(user, result)
+}
+```

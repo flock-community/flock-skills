@@ -1,0 +1,152 @@
+# {Project Name}
+
+React + Vite + TypeScript frontend with TanStack Router, TanStack Query, and Ant Design.
+
+## Scripts
+
+```bash
+npm run dev            # Start dev server
+npm run build          # Build for production
+npm run typecheck      # Type check without emitting
+npm run lint           # Lint and fix
+npm run format         # Format with Prettier
+npm run storybook      # Start Storybook dev server
+npm run storybook:build # Build Storybook for deployment
+```
+
+## Architecture
+
+This project follows a layered architecture with enforced boundaries:
+
+```
+src/
+├── theme/           # Design tokens and theme config (leaf layer)
+├── shared/
+│   ├── ui/          # Reusable UI components
+│   └── lib/         # Pure utilities (no dependencies)
+├── features/        # Feature modules (domain logic)
+├── hooks/           # Shared React hooks
+└── routes/          # TanStack Router pages (can import everything)
+```
+
+### Import Rules
+
+| From | Can Import |
+|------|------------|
+| `theme/` | Nothing (leaf layer) |
+| `shared/lib/` | Nothing (pure utilities) |
+| `shared/ui/` | `theme/`, `shared/lib/` |
+| `hooks/` | `theme/`, `shared/lib/` |
+| `features/*` | `theme/`, `shared/*` (NOT other features) |
+| `routes/` | Everything |
+
+ESLint will error if you violate these boundaries.
+
+## Design Tokens
+
+Always use design tokens from the theme - never hardcode colors, fonts, or spacing.
+
+### Using Tokens in Components
+
+```tsx
+import { useDesignTokens } from '@/theme'
+
+function MyComponent() {
+  const { token } = useDesignTokens()
+
+  return (
+    <div style={{
+      color: token.colorPrimary,
+      padding: token.padding,
+      fontFamily: token.fontFamily,
+    }}>
+      Hello
+    </div>
+  )
+}
+```
+
+### Available Token Categories
+
+**Colors:**
+- Primary: `colorPrimary`, `colorPrimaryHover`, `colorPrimaryActive`, `colorPrimaryBg`
+- Success: `colorSuccess`, `colorSuccessHover`, `colorSuccessActive`
+- Warning: `colorWarning`, `colorWarningHover`, `colorWarningActive`
+- Error: `colorError`, `colorErrorHover`, `colorErrorActive`
+- Text: `colorText`, `colorTextSecondary`, `colorTextTertiary`, `colorTextDisabled`
+- Background: `colorBgContainer`, `colorBgElevated`, `colorBgLayout`
+- Border: `colorBorder`, `colorBorderSecondary`
+
+**Typography:**
+- Fonts: `fontFamily`, `fontFamilyCode`
+- Sizes: `fontSizeSM` (12), `fontSize` (14), `fontSizeLG` (16), `fontSizeXL` (20)
+- Weights: `fontWeightNormal`, `fontWeightMedium`, `fontWeightSemibold`, `fontWeightBold`
+
+**Spacing (4px grid):**
+- Padding: `paddingXXS` (4), `paddingXS` (8), `paddingSM` (12), `padding` (16), `paddingMD` (20), `paddingLG` (24), `paddingXL` (32)
+- Margin: `marginXXS`, `marginXS`, `marginSM`, `margin`, `marginMD`, `marginLG`, `marginXL`
+- Border radius: `borderRadius` (6), `borderRadiusSM` (4), `borderRadiusLG` (8)
+
+## ESLint Rules
+
+Custom rules enforce design system consistency:
+
+- `novacuria/no-hardcoded-colors` - Error on hex/rgb/hsl values
+- `novacuria/no-hardcoded-fonts` - Error on font-family strings
+- `novacuria/no-hardcoded-spacing` - Warn on non-4px-grid values
+
+Each rule provides detailed fix instructions in the error message.
+
+## Storybook
+
+Components in `src/shared/ui/` should have accompanying `.stories.tsx` files.
+
+### Running Storybook
+
+```bash
+npm run storybook
+```
+
+Opens at [http://localhost:6006](http://localhost:6006).
+
+### Writing Stories
+
+```tsx
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { MyComponent } from './MyComponent'
+
+const meta: Meta<typeof MyComponent> = {
+  title: 'shared/ui/MyComponent',
+  component: MyComponent,
+  tags: ['autodocs'],
+}
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const Default: Story = {
+  args: {
+    // props
+  },
+}
+```
+
+## Adding Routes
+
+Create new route files in `src/routes/`:
+- `src/routes/about.tsx` → `/about`
+- `src/routes/users/index.tsx` → `/users`
+- `src/routes/users/$userId.tsx` → `/users/:userId`
+
+## Data Fetching
+
+Use TanStack Query hooks for data fetching:
+
+```tsx
+import { useQuery } from '@tanstack/react-query'
+
+const { data, isPending, error } = useQuery({
+  queryKey: ['users'],
+  queryFn: () => fetch('/api/users').then(res => res.json()),
+})
+```

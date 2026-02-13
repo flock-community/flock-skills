@@ -1,11 +1,11 @@
 {
   "name": "flock-skills",
   "version": "1.0.0",
-  "description": "Skills for coding agents to deliver Flock-quality software projects. Includes specification writing, project planning, and requirements management.",
+  "description": "Skills for coding agents to deliver Flock-quality software projects. Includes specification writing, project setup, and requirements management.",
   "author": {
     "name": "Flock Community"
   },
   "repository": "https://github.com/flock-community/flock-skills",
   "license": "MIT",
-  "keywords": ["specification", "requirements", "prd", "design-doc", "adr"]
+  "keywords": ["specification", "requirements", "prd", "design-doc", "adr", "react", "spring-boot", "kotlin", "project-setup"]
 }
