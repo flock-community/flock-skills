@@ -1,29 +1,8 @@
----
-name: spec-init
-description: |
-  Set up spec directory structure in a project — initialize or upgrade integration levels.
-
-  MANDATORY TRIGGERS: spec-init, "set up specs", "initialize specs", "bootstrap specs"
-
-  Use when: Setting up a new spec system in a project or upgrading an existing one to a higher integration level
----
-
-# /spec-init — Set Up Spec Structure
+# Set up spec structure
 
 Initialize the spec system in a project or upgrade to a higher integration level.
 
-## Integration Level Detection
-
-Detect the current level before setup:
-
-1. Check for `@spec` annotations in code files → Level 5
-2. Check for `.implemented.json` → Level 4
-3. Check for `specs/schemas/` or `$schema` references → Level 3
-4. Check for `specs/` directory with `why/`, `what/`, or `how/` subdirs → Level 2
-5. Check for any `.md` with `$schema` frontmatter → Level 1
-6. None found → Level 0
-
-See `../specification/references/integration-levels.md` for full details.
+Detect the current level first (see [SKILL.md](../SKILL.md) → Integration Level Detection).
 
 ## Setup Flow
 
@@ -31,7 +10,7 @@ See `../specification/references/integration-levels.md` for full details.
 2. **Report** current state to user
 3. **Ask** which level to target (suggest one level up, or level 2 for new projects)
 4. **Execute** the upgrade steps for the target level
-5. **Suggest** running `/spec` to create the first spec (vision is a good start)
+5. **Suggest** the **build** operation to create the first spec (vision is a good start)
 
 ## Upgrade Steps
 
@@ -41,7 +20,7 @@ Create a single markdown spec file with YAML frontmatter. Good for trying out th
 
 ```bash
 # Create a vision spec as starting point
-# Use the vision schema from ../specification/schemas/why/vision.yaml
+# Use the vision schema from ../schemas/why/vision.yaml
 ```
 
 ### Level 0/1 → 2: Hierarchy
@@ -58,7 +37,7 @@ Copy schemas from the template or reference the built-in schemas:
 
 ```bash
 # Option A: Copy schemas for customization
-cp -r ../specification/template/schemas specs/schemas
+cp -r ../template/schemas specs/schemas
 
 # Option B: Reference built-in schemas (no copy needed)
 # Specs just use $schema: feature and the skill reads built-in schemas
@@ -67,9 +46,9 @@ cp -r ../specification/template/schemas specs/schemas
 Copy scripts for local validation:
 ```bash
 mkdir -p scripts
-cp ../specification/template/scripts/index.py scripts/
-cp ../specification/template/scripts/validate.py scripts/
-cp ../specification/template/scripts/stats.sh scripts/
+cp ../template/scripts/index.py scripts/
+cp ../template/scripts/validate.py scripts/
+cp ../template/scripts/stats.sh scripts/
 ```
 
 ### Level 3 → 4: Implementation-Tracked
@@ -102,11 +81,11 @@ Get current hash: git hash-object specs/what/feature/login.md
 Use first 8 characters of the hash.
 ```
 
-Suggest running `/spec-reverse` to automatically annotate existing code.
+Suggest the **reverse** operation to automatically annotate existing code.
 
 ## Template Resources
 
-The project template is available at `../specification/template/` and contains:
+The project template is available at `../template/` and contains:
 - `schemas/` — Full set of YAML schemas for all 15 spec types
 - `specs/.implemented.json` — Empty implementation tracker
 - `scripts/` — `index.py`, `validate.py`, `stats.sh`
@@ -115,6 +94,6 @@ The project template is available at `../specification/template/` and contains:
 ## After Setup
 
 Suggest next steps based on the project state:
-- **Empty project:** "Run `/spec` to create a vision spec — describe what you're building and for whom."
-- **Existing code:** "Run `/spec-reverse` to generate specs from your existing codebase."
-- **Has some specs:** "Run `/spec-status` to see current state, or `/spec-review` to check quality."
+- **Empty project:** "Run the **build** operation to create a vision spec — describe what you're building and for whom."
+- **Existing code:** "Run the **reverse** operation to generate specs from your existing codebase."
+- **Has some specs:** "Run the **status** operation to see current state, or **review** to check quality."

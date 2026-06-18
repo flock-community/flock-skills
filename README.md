@@ -1,86 +1,66 @@
 # Flock Skills
 
-## Why
+Agent skills for delivering Flock-quality software. These are plain `SKILL.md`
+skills built on the open Agent Skills standard, so they work with any coding
+agent (Claude Code, Cursor, Codex, Copilot, and others).
 
-AI coding assistants build what you ask literally, not what you need.
-Specifications bridge intent and implementation — structured, validated,
-traceable requirements that AI agents can execute precisely.
-
-## What
-
-7 commands for creating, reviewing, and maintaining typed specifications.
-Specs are markdown files with YAML frontmatter, organized in three layers
-(Why / What / How), progressively validated from simple files to
-schema-validated, implementation-tracked, code-linked systems.
-
-## Commands
-
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `/spec` | Build new specs from conversation | "I want to build a todo app" |
-| `/spec-init` | Set up spec directory structure | "Set up specs for this project" |
-| `/spec-review` | Review specs for quality and completeness | "Check my specs for problems" |
-| `/spec-deepen` | Deepen specs through reflection and questioning | "What's missing from my specs?" |
-| `/spec-reverse` | Reverse engineer code into specs | "Generate specs from this codebase" |
-| `/spec-refactor` | Restructure, migrate, or import specs | "Split this large spec" |
-| `/spec-status` | Show spec system state, health, and drift | "How are my specs doing?" |
-
-## Integration Levels
-
-| Level | Name | What it adds |
-|-------|------|-------------|
-| 1 | Single file | One `.md` spec with YAML frontmatter |
-| 2 | Hierarchy | Specs organized in `specs/why/`, `specs/what/`, `specs/how/` |
-| 3 | Schema-validated | YAML schemas define structure + AI validation prompts |
-| 4 | Implementation-tracked | `.implemented.json` maps spec paths to git blob hashes |
-| 5 | Code-linked | Code annotations `// @spec FEAT-001#a1b2c3d4` reference spec ID + version hash |
-
-Start at any level. Use `/spec-init` to set up or upgrade.
-
-## Installation
-
-```shell
-# Add the marketplace
-/plugin marketplace add flock-community/flock-skills
-
-# Install the plugin
-/plugin install flock-skills@flock-community-flock-skills
-```
-
-### Local development
+## Quickstart
 
 ```bash
-git clone https://github.com/flock-community/flock-skills.git
-claude --plugin-dir ./flock-skills
+npx skills@latest add flock-community/flock-skills
 ```
 
-### Managing the plugin
+Pick the skills you want and which agents to install them on.
 
-```shell
-/plugin enable flock-skills
-/plugin disable flock-skills
-/plugin uninstall flock-skills@flock-community-flock-skills
+## Skills
+
+### Engineering
+
+- [spec](./skills/engineering/spec/SKILL.md): build, review, and maintain typed
+  specifications. One skill with seven operations (build, init, review, deepen,
+  reverse, refactor, status) for turning conversations and code into structured,
+  validated, traceable requirements that AI agents can execute.
+- [preflight](./skills/engineering/preflight/SKILL.md): end-of-coding done-gate.
+  Runs the full test suite, reviews the branch diff via code-review, fixes the
+  findings, then self-improves by saving durable learnings for next time.
+
+### Productivity
+
+- [demo-video](./skills/productivity/demo-video/SKILL.md): record a polished,
+  flicker-free demo video (or GIF) of a running web app by driving it with
+  headless Playwright, then transcoding and frame-verifying the result.
+
+## Use as a Claude Code plugin
+
+The repo also ships a `.claude-plugin/plugin.json` listing the published skills.
+To load it directly for local use:
+
+```bash
+claude --plugin-dir /path/to/flock-skills
 ```
 
-## Plugin Structure
+## Local development
+
+Symlink every skill into `~/.claude/skills` so the local Claude CLI picks them up:
+
+```bash
+./scripts/link-skills.sh
+```
+
+## Structure
 
 ```
 flock-skills/
-├── .claude-plugin/
-│   ├── plugin.json
-│   └── marketplace.json
-├── skills/
-│   ├── specification/           # Shared knowledge base
-│   │   ├── schemas/             # 15 YAML type schemas
-│   │   ├── references/          # System docs and guides
-│   │   ├── scripts/             # Python utilities
-│   │   └── template/            # Project template
-│   ├── spec/SKILL.md            # /spec command
-│   ├── spec-init/SKILL.md       # /spec-init command
-│   ├── spec-review/SKILL.md     # /spec-review command
-│   ├── spec-deepen/SKILL.md     # /spec-deepen command
-│   ├── spec-reverse/SKILL.md    # /spec-reverse command
-│   ├── spec-refactor/SKILL.md   # /spec-refactor command
-│   └── spec-status/SKILL.md     # /spec-status command
-└── README.md
+├── .claude-plugin/plugin.json     # lists the published skills
+├── package.json
+├── scripts/link-skills.sh         # symlink skills into ~/.claude/skills
+└── skills/
+    ├── engineering/
+    │   ├── spec/                    # SKILL.md + references/ + schemas/ + scripts/ + template/
+    │   └── preflight/               # SKILL.md + scripts/
+    └── productivity/
+        └── demo-video/              # SKILL.md + REFERENCE.md + scripts/
 ```
+
+Skills are grouped into category buckets. Each published skill is listed above
+and registered in `.claude-plugin/plugin.json`.

@@ -1,0 +1,11 @@
+{
+  "name": "flock-skills",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agent skills for delivering Flock-quality software projects",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flock-community/flock-skills"
+  },
+  "license": "MIT"
+}

@@ -1,29 +1,8 @@
----
-name: spec-review
-description: |
-  Review existing specs for quality and completeness — structural validation, content review, cross-reference checks, and drift detection.
-
-  MANDATORY TRIGGERS: spec-review, "review specs", "check specs", "audit specs"
-
-  Use when: Checking spec quality, finding broken references, validating against schemas, or detecting implementation drift
----
-
-# /spec-review — Review Specs for Quality
+# Review specs for quality
 
 Review existing specs for structural integrity, content quality, cross-reference completeness, and implementation drift.
 
-## Integration Level Detection
-
-Detect the current level to determine review capabilities:
-
-1. Check for `@spec` annotations in code files → Level 5
-2. Check for `.implemented.json` → Level 4
-3. Check for `specs/schemas/` or `$schema` references → Level 3
-4. Check for `specs/` directory with `why/`, `what/`, or `how/` subdirs → Level 2
-5. Check for any `.md` with `$schema` frontmatter → Level 1
-6. None found → Level 0 (nothing to review)
-
-See `../specification/references/integration-levels.md` for full details.
+Detect the current level first (see [SKILL.md](../SKILL.md) → Integration Level Detection) to determine review capabilities. At level 0 there is nothing to review.
 
 ## Review Flow
 
@@ -43,7 +22,7 @@ Check spec files for structural correctness:
 - **Valid frontmatter** — YAML parses without errors
 - **Broken references** — `why:`, `what:`, `how:` fields point to existing specs
 - **Orphan specs** — specs not referenced by any other spec (except vision, which is the root)
-- **Large specs** — files over ~150 lines are candidates for splitting (see `../specification/references/evolution.md`)
+- **Large specs** — files over ~150 lines are candidates for splitting (see `evolution.md`)
 - **Circular references** — specs that form reference cycles
 
 Run `scripts/validate.py` if available. Otherwise, check manually by reading spec files.
@@ -52,12 +31,12 @@ Run `scripts/validate.py` if available. Otherwise, check manually by reading spe
 
 For each spec, read its schema and run AI validation prompts:
 
-1. Read schema: project `specs/schemas/{layer}/{type}.yaml` or built-in `../specification/schemas/{layer}/{type}.yaml`
+1. Read schema: project `specs/schemas/{layer}/{type}.yaml` or built-in `../schemas/{layer}/{type}.yaml`
 2. Check all required sections are present
 3. Run `ai_validate` prompts from each section definition
 4. Check frontmatter fields match schema types and constraints
 
-For AI validation patterns and variable syntax, read `../specification/references/validation-patterns.md`.
+For AI validation patterns and variable syntax, read `validation-patterns.md`.
 
 ### Content Quality Checks
 

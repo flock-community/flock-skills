@@ -1,62 +1,8 @@
----
-name: spec
-description: |
-  Build new specs from conversation — transform ideas, requirements, and decisions into typed, validated specifications.
-
-  MANDATORY TRIGGERS: specification, spec, requirements, feature spec, user story, acceptance criteria, domain model, "what to build", PRD, product requirements, design doc, ADR, decision record
-
-  Use when: (1) Starting a new project, (2) Converting conversations into structured specs, (3) Defining features, entities, or business rules, (4) Recording architectural decisions, (5) Creating implementation guidance for AI agents
----
-
-# /spec — Build Specs from Conversation
+# Build specs from conversation
 
 Transform conversations into typed specifications that AI agents can execute.
 
-## Integration Level Detection
-
-Before starting, detect the current integration level:
-
-1. Check for `@spec` annotations in code files → Level 5
-2. Check for `.implemented.json` → Level 4
-3. Check for `specs/schemas/` or `$schema` references → Level 3
-4. Check for `specs/` directory with `why/`, `what/`, or `how/` subdirs → Level 2
-5. Check for any `.md` with `$schema` frontmatter → Level 1
-6. None found → Level 0
-
-See `../specification/references/integration-levels.md` for full detection and adaptation details.
-
-**At level 0:** Suggest running `/spec-init` first, or create a single spec file (level 1).
-
-## Using Schemas
-
-**Before creating any spec**, read the schema for that type:
-
-```bash
-# Check if project has custom schemas
-ls specs/schemas/  # Project-specific schemas
-
-# Fall back to built-in schemas
-# Read from: ../specification/schemas/{layer}/{type}.yaml
-```
-
-Schemas define:
-- **Frontmatter fields** — required fields, types, defaults
-- **Sections** — required/optional headings, content type
-- **AI validation** — prompts for content quality checks
-
-When creating a spec:
-1. Read the schema: project `specs/schemas/{layer}/{type}.yaml` or built-in `../specification/schemas/{layer}/{type}.yaml`
-2. Include all required frontmatter fields
-3. Include all required sections
-4. Run AI validation prompts against content
-
-## The Three Layers
-
-| Layer | Question | Types | Stability |
-|-------|----------|-------|-----------|
-| **Why** | Why build this? | Vision, Goal, Persona, Constraint, Decision | Most stable |
-| **What** | What does it do? | Entity, Feature, Rule, Journey, Interface | Moderate |
-| **How** | How to build it? | Agent, Skill, Lens, Workflow, Stack | Least stable |
+Detect the integration level first (see [SKILL.md](../SKILL.md) → Integration Level Detection). At level 0, suggest the **init** operation, or create a single spec file (level 1).
 
 ## Conversation Loop
 
@@ -70,7 +16,7 @@ When creating a spec:
 7. CONNECT — Link to related specs across layers
 ```
 
-For elicitation techniques: read `../specification/references/conversation-flow.md`
+For elicitation techniques: read `conversation-flow.md`.
 
 ## Pre-Creation Checklist (MANDATORY)
 
@@ -115,7 +61,7 @@ ACTION: Note "React goes in how/stack, not vision"
 ### Technical in Wrong Layer → Redirect
 | User Says | Problem | Response |
 |-----------|---------|----------|
-| "Vision is to use React Native" | Tech in Why layer | "That's a technical choice — goes in How/Stack. What problem does the app solve for users?" |
+| "Vision is to use React Native" | Tech in Why layer | "That's a technical choice, goes in How/Stack. What problem does the app solve for users?" |
 | "Feature: use Redux store" | Implementation as requirement | "That's how you'll build it. What should users experience?" |
 | "Goal: build with microservices" | Architecture as goal | "That's an approach. What business outcome are you targeting?" |
 
@@ -201,48 +147,8 @@ how:
 - Then: Redirected to dashboard
 ```
 
-## Quick Reference
+## After Building
 
-### Type Detection
-| User says... | Type |
-|--------------|------|
-| "The goal is..." | Why/Goal |
-| "Our users are..." | Why/Persona |
-| "We decided to..." | Why/Decision |
-| "A [thing] has..." | What/Entity |
-| "Users can..." | What/Feature |
-| "If X then Y" | What/Rule |
-| "The screen shows..." | What/Interface |
-| "We'll use [tech]..." | How/Stack |
-
-### Requirements Language (RFC 2119)
-| Keyword | Meaning |
-|---------|---------|
-| **MUST** | Absolute requirement |
-| **SHOULD** | Recommended |
-| **MAY** | Truly optional |
-
-### ID Format
-- `VIS-001`, `GOAL-001`, `PER-001`, `CONST-001`, `DEC-001`
-- `ENT-001`, `FEAT-001`, `RULE-001`, `JOUR-001`, `UI-001`
-- `AGT-001`, `SKL-001`, `LNS-001`, `WFL-001`, `STACK-001`
-
-## Built-in Schemas
-
-This skill includes default schemas in `../specification/schemas/`:
-
-**Why**: `vision.yaml`, `goal.yaml`, `persona.yaml`, `constraint.yaml`, `decision.yaml`
-**What**: `entity.yaml`, `feature.yaml`, `rule.yaml`, `journey.yaml`, `interface.yaml`
-**How**: `agent.yaml`, `skill.yaml`, `lens.yaml`, `workflow.yaml`, `stack.yaml`
-
-Projects can override these by creating `specs/schemas/` with custom versions.
-
-## Reference Files
-
-For deeper guidance on specific topics:
-- `../specification/references/conversation-flow.md` — Elicitation techniques and Example Mapping
-- `../specification/references/validation-patterns.md` — AI validation patterns and prompts
-- `../specification/references/evolution.md` — Splitting, versioning, deprecation
-- `../specification/references/tooling.md` — Index and validate scripts
-- `../specification/references/spec-system-overview.md` — Condensed system overview
-- `../specification/references/integration-levels.md` — Progressive integration levels
+- Run AI validation prompts from the schema (see `validation-patterns.md`).
+- Connect the new spec to related specs across layers.
+- Suggest the **review** operation to validate quality, or the **deepen** operation to fill gaps.

@@ -1,29 +1,8 @@
----
-name: spec-deepen
-description: |
-  Deepen specs through code+spec reflection and targeted questioning — find gaps, strengthen coverage, and improve specificity.
-
-  MANDATORY TRIGGERS: spec-deepen, "deepen specs", "improve specs", "spec gaps", "what's missing"
-
-  Use when: Specs exist but need more depth, specificity, or coverage — finding gaps, adding scenarios, strengthening requirements
----
-
-# /spec-deepen — Deepen Specs Through Reflection
+# Deepen specs through reflection
 
 Improve existing specs by reflecting on code and specs together, finding gaps, and asking targeted questions.
 
-## Integration Level Detection
-
-Detect the current level:
-
-1. Check for `@spec` annotations in code files → Level 5
-2. Check for `.implemented.json` → Level 4
-3. Check for `specs/schemas/` or `$schema` references → Level 3
-4. Check for `specs/` directory with `why/`, `what/`, or `how/` subdirs → Level 2
-5. Check for any `.md` with `$schema` frontmatter → Level 1
-6. None found → Level 0 (nothing to deepen — suggest `/spec-init`)
-
-See `../specification/references/integration-levels.md` for full details.
+Detect the current level first (see [SKILL.md](../SKILL.md) → Integration Level Detection). At level 0 there is nothing to deepen — suggest the **init** operation.
 
 ## Deepening Flow
 
@@ -84,7 +63,7 @@ When code has `@spec` annotations:
 
 ## Questioning Technique
 
-Use conversation-flow patterns from `../specification/references/conversation-flow.md`:
+Use conversation-flow patterns from `conversation-flow.md`:
 
 - **Ask 1-2 questions at a time** — never dump a list of 10 questions
 - **Be specific** — "What happens when a user submits an empty form?" not "What are the edge cases?"
@@ -109,4 +88,4 @@ Check connections between layers:
 - Update all modified specs with new version numbers
 - Run schema validation on updated specs (level 3+)
 - Update cross-references if new connections were found
-- Suggest running `/spec-review` to validate the updated specs
+- Suggest the **review** operation to validate the updated specs

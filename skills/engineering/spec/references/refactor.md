@@ -1,29 +1,8 @@
----
-name: spec-refactor
-description: |
-  Restructure, migrate, or import specs — split large specs, merge related ones, re-layer misplaced specs, upgrade integration levels, or import from external formats.
-
-  MANDATORY TRIGGERS: spec-refactor, "refactor specs", "split spec", "merge specs", "import specs", "reorganize"
-
-  Use when: Specs need restructuring — too large, misplaced in wrong layer, need merging, or importing from external format
----
-
-# /spec-refactor — Restructure Specs
+# Restructure specs
 
 Split, merge, re-layer, upgrade, or import specs while maintaining referential integrity.
 
-## Integration Level Detection
-
-Detect the current level:
-
-1. Check for `@spec` annotations in code files → Level 5
-2. Check for `.implemented.json` → Level 4
-3. Check for `specs/schemas/` or `$schema` references → Level 3
-4. Check for `specs/` directory with `why/`, `what/`, or `how/` subdirs → Level 2
-5. Check for any `.md` with `$schema` frontmatter → Level 1
-6. None found → Level 0
-
-See `../specification/references/integration-levels.md` for full details.
+Detect the current level first (see [SKILL.md](../SKILL.md) → Integration Level Detection).
 
 ## Operations
 
@@ -31,7 +10,7 @@ See `../specification/references/integration-levels.md` for full details.
 
 When a spec exceeds ~150 lines or covers multiple concerns:
 
-**Strategies** (from `../specification/references/evolution.md`):
+**Strategies** (from `evolution.md`):
 - **Parent + Children** — original becomes overview, details move to child specs
 - **Index + Peers** — original becomes index linking to peer specs
 - **Flat Split** — original splits into independent specs
@@ -77,7 +56,7 @@ When specs are in the wrong layer (e.g., implementation detail in Why layer):
 
 ### 4. Upgrade Integration Level
 
-Move from one level to the next. Delegates to `/spec-init` for the actual setup, but handles the restructuring:
+Move from one level to the next. Delegates to the **init** operation for the actual setup, but handles the restructuring:
 
 - Level 1 → 2: Move specs into layer directories
 - Level 2 → 3: Add `$schema` references to existing specs, validate against schemas
@@ -106,7 +85,7 @@ Convert external documents into specs:
 
 ## Deprecation Handling
 
-When removing or replacing specs, follow deprecation patterns from `../specification/references/evolution.md`:
+When removing or replacing specs, follow deprecation patterns from `evolution.md`:
 
 1. Set `status: deprecated` on the old spec
 2. Add `superseded_by:` pointing to the replacement
@@ -126,6 +105,6 @@ After any refactoring operation:
 
 ## Reference
 
-- `../specification/references/evolution.md` — Splitting strategies, versioning, deprecation
-- `../specification/references/tooling.md` — Index and validation scripts
-- `../specification/references/integration-levels.md` — Level upgrade details
+- `evolution.md` — Splitting strategies, versioning, deprecation
+- `tooling.md` — Index and validation scripts
+- `integration-levels.md` — Level upgrade details

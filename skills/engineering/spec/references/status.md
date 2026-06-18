@@ -1,29 +1,8 @@
----
-name: spec-status
-description: |
-  Show spec system state, health, and drift — overview of integration level, spec counts, broken references, and implementation tracking.
-
-  MANDATORY TRIGGERS: spec-status, "spec status", "spec health", "spec stats"
-
-  Use when: Checking the overall state of the spec system, finding problems, or deciding what to work on next
----
-
-# /spec-status — Show Spec System State
+# Show spec system state
 
 Report the current state, health, and coverage of the spec system.
 
-## Integration Level Detection
-
-Detect and report the current level:
-
-1. Check for `@spec` annotations in code files → Level 5
-2. Check for `.implemented.json` → Level 4
-3. Check for `specs/schemas/` or `$schema` references → Level 3
-4. Check for `specs/` directory with `why/`, `what/`, or `how/` subdirs → Level 2
-5. Check for any `.md` with `$schema` frontmatter → Level 1
-6. None found → Level 0
-
-See `../specification/references/integration-levels.md` for full details.
+Detect and report the current level first (see [SKILL.md](../SKILL.md) → Integration Level Detection).
 
 ## Report Sections
 
@@ -99,13 +78,13 @@ Identify missing coverage:
 
 ### 7. Recommendations
 
-Based on findings, suggest the next command:
-- Health issues → "Run `/spec-review` to fix structural problems"
-- Many drafts → "Run `/spec-review` to improve draft quality"
-- Missing layers → "Run `/spec` to fill gaps in [layer]"
-- Drifted implementations → "Run `/spec-deepen` on drifted specs"
-- No specs yet → "Run `/spec-init` to set up the spec system"
-- Ready to upgrade → "Run `/spec-init` to upgrade to level [N+1]"
+Based on findings, suggest the next operation:
+- Health issues → "Run the **review** operation to fix structural problems"
+- Many drafts → "Run the **review** operation to improve draft quality"
+- Missing layers → "Run the **build** operation to fill gaps in [layer]"
+- Drifted implementations → "Run the **deepen** operation on drifted specs"
+- No specs yet → "Run the **init** operation to set up the spec system"
+- Ready to upgrade → "Run the **init** operation to upgrade to level [N+1]"
 
 ## Output Format
 
