@@ -1,31 +1,8 @@
----
-name: spec-reverse
-description: |
-  Reverse engineer existing code into specs — analyze codebase structure, identify features and domain models, and draft typed specifications.
-
-  MANDATORY TRIGGERS: spec-reverse, "reverse engineer", "spec from code", "document existing code"
-
-  Use when: A codebase exists but has no specs, or parts of the code are unspecified and need documentation
----
-
-# /spec-reverse — Reverse Engineer Code into Specs
+# Reverse engineer code into specs
 
 Analyze existing code to draft typed specifications, then review with the user.
 
-## Integration Level Detection
-
-Detect the current level:
-
-1. Check for `@spec` annotations in code files → Level 5
-2. Check for `.implemented.json` → Level 4
-3. Check for `specs/schemas/` or `$schema` references → Level 3
-4. Check for `specs/` directory with `why/`, `what/`, or `how/` subdirs → Level 2
-5. Check for any `.md` with `$schema` frontmatter → Level 1
-6. None found → Level 0
-
-See `../specification/references/integration-levels.md` for full details.
-
-**At level 0:** Suggest running `/spec-init` first to set up the directory structure. Or proceed with level 1 (single files) and upgrade later.
+Detect the current level first (see [SKILL.md](../SKILL.md) → Integration Level Detection). At level 0, suggest the **init** operation to set up the directory structure, or proceed with level 1 (single files) and upgrade later.
 
 ## Reverse Engineering Flow
 
@@ -74,7 +51,7 @@ The Why layer must be inferred — code doesn't explicitly state purpose:
 
 For each identified component:
 
-1. **Read the schema** — project `specs/schemas/{layer}/{type}.yaml` or built-in `../specification/schemas/{layer}/{type}.yaml`
+1. **Read the schema** — project `specs/schemas/{layer}/{type}.yaml` or built-in `../schemas/{layer}/{type}.yaml`
 2. **Fill frontmatter** — all required fields, set `status: draft`
 3. **Fill sections** — based on code analysis
 4. **Mark uncertainties** — add hotspot comments where you're guessing:
@@ -121,6 +98,6 @@ function login(email, password) { ... }
 
 ## After Reverse Engineering
 
-- Suggest running `/spec-review` to validate drafted specs
-- Suggest running `/spec-deepen` to fill gaps identified during analysis
+- Suggest the **review** operation to validate drafted specs
+- Suggest the **deepen** operation to fill gaps identified during analysis
 - If many drafts were created, suggest reviewing a few at a time rather than all at once
