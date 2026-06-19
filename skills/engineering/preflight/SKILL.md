@@ -5,22 +5,22 @@ description: Definition-of-done gate that also sharpens itself. Runs the full te
 
 # Preflight
 
-End-of-coding gate. Run the loop in order. Don't skip the self-improve step — it's what makes the next run faster.
+End-of-coding gate. Run the loop in order. Don't skip the self-improve step (unless step 0 reports no durable notes location) — it's what makes the next run faster.
 
 ## Loop
 
-0. **Load memory.** Read `./.claude/preflight.md` (project notes) if it exists. In a git worktree, also check the main repo's copy (`git worktree list` → first entry) — untracked notes don't ride worktrees. It holds the test command, build quirks, and recurring pitfalls learned on past runs. Use them — don't rediscover.
+0. **Load memory.** Run `scripts/notes-path.sh` (relative to this skill dir) to resolve the project-notes file for whichever coding agent is in use — it adapts to `.claude`, `.cursor`, `.codex`, etc. (and handles worktrees). If it prints a path, read that file when it exists: it holds the test command, build quirks, and recurring pitfalls learned on past runs — use them, don't rediscover. If it exits without a path (cloud/ephemeral sandbox, or no agent config dir), there's nowhere durable to persist — skip this step *and* the self-improve step (5).
 1. **Scope the diff.** Run `scripts/diff-base.sh` (relative to this skill dir) to get the base branch + changed files. That diff is the review scope. If not on a feature branch, fall back to working tree + recent commits.
 2. **Run tests.** Use the command from project notes if present; else detect it (package.json scripts, `cargo test`, `./gradlew test`, `pytest`, `go test ./...`, Makefile). Run the **full** suite. Capture failures verbatim.
 3. **Review.** Invoke the `/code-review` skill scoped to the branch diff. Let it surface bugs + cleanups. Don't re-implement review logic here.
 4. **Fix.** Address test failures first, then review findings worth acting on. Re-run the affected tests (and the full suite at the end) until green. State plainly what you fixed and what you deliberately skipped + why.
-5. **Self-improve.** Reflect: did anything this run reveal that would make *next* run faster or catch more? Route it per the rules below. Announce every save in the final summary.
+5. **Self-improve.** Skip entirely if step 0 reported no notes path (cloud/ephemeral, or no agent config dir) — there's nowhere durable to persist. Otherwise reflect: did anything this run reveal that would make *next* run faster or catch more? Route it per the rules below. Announce every save in the final summary.
 
 ## Self-improve routing
 
 Be conservative. Most runs save nothing. Save only durable, reusable lessons.
 
-**→ Project notes (`./.claude/preflight.md`)** — facts true for *this repo*:
+**→ Project notes (the file resolved in step 0, e.g. `.claude/preflight.md` or `.cursor/preflight.md`)** — facts true for *this repo*:
 - the exact test / lint / build command (esp. if it took effort to find)
 - env or setup steps tests need (services, fixtures, env vars)
 - flaky tests and how to deal with them
@@ -32,7 +32,7 @@ Be conservative. Most runs save nothing. Save only durable, reusable lessons.
 
 ## Project notes format
 
-A terse quick-reference, NOT a logbook. Create `./.claude/preflight.md` on first useful learning:
+A terse quick-reference, NOT a logbook. Create the notes file (path from step 0, under the active agent's config dir) on first useful learning:
 
 ```md
 # preflight — project notes
