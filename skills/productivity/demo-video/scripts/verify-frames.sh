@@ -2,6 +2,8 @@
 # Extract ~n evenly-spaced frames as PNG, then Read them to catch flicker/blanks/overlaps.
 set -euo pipefail
 
+for t in ffmpeg ffprobe; do command -v "$t" >/dev/null || { echo "$t not found — install ffmpeg (macOS: brew install ffmpeg | Linux: sudo apt-get install -y ffmpeg)." >&2; exit 127; }; done
+
 [ "$#" -ge 1 ] || { echo "usage: verify-frames.sh video [outdir=/tmp/screencast-frames] [n=12]" >&2; exit 2; }
 vid="$1"; outdir="${2:-/tmp/screencast-frames}"; n="${3:-12}"
 

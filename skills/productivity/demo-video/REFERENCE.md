@@ -95,7 +95,7 @@ Use these instead of raw `locator.click()` so the take reads as a person, not a 
 
 `target` is a CSS string or a Locator. The biggest "natural" lever isn't the cursor though — it's **pacing for causality**: caption the cause → act → pause → `scrollTo` the consequence into frame → hold ≥2s (≥3s for a hero change) so the viewer registers what changed and why.
 
-Env: `BASE_URL`, `VIDEO_DIR`, `STEPS` (required), `SEGMENT` (free-form, read in steps via `env.SEGMENT`), `WIDTH`, `HEIGHT`, `SLOWMO`, `HEADLESS=0` to watch, `TIMEOUT`, `STORAGE_STATE` (reuse auth across segments — load if the file exists, steps can save to it to skip re-login), `INJECT_CSS` (CSS re-injected on every load — e.g. flatten flickery modal backdrops).
+Env: `BASE_URL`, `VIDEO_DIR`, `STEPS` (required), `SEGMENT` (free-form, read in steps via `env.SEGMENT`), `WIDTH`, `HEIGHT`, `SLOWMO`, `HEADLESS=0` to watch, `TIMEOUT`, `STORAGE_STATE` (reuse auth across segments — load if the file exists, steps can save to it to skip re-login), `INJECT_CSS` (CSS re-injected on every load — e.g. flatten flickery modal backdrops), `CHROMIUM_NO_SANDBOX=1` (add `--no-sandbox --disable-dev-shm-usage` for containers/cloud; auto-on as root or when `CI` is set), `CHROMIUM_ARGS` (extra space-separated Chromium flags).
 
 ### Caption bar
 A fixed bottom-center pill (`#__demo_caption__`, brand accent left border). The DOM is wiped on every full navigation, so `caption()` re-creates the element if missing — **call it again after each `page.goto`/route change**.
@@ -151,6 +151,6 @@ Keep demo-only edits (test-data enrichment, build flags) on a throwaway branch �
 - **File too big to share** → lower viewport (`WIDTH`/`HEIGHT`) at record time, or accept `QP=18`; don't switch to `-crf` to shrink it.
 - **Won't autoplay inline on iPhone** → it's webm; ship the mp4.
 
-## Project specifics — pull from memory, don't hardcode
+## Project specifics — pull at use-time, don't hardcode
 
-Login creds, dev-data seeding flags, ports, and brand accent are per-project. Recall them at use-time. For Flock Workday: `demo-admin-user-bert` (login + rich-data star), `dev-data-seed-test-classpath` (build-helper add-source so the dev loaders seed), `dev-backend-spring-profile-flag` (`-Dspring-boot.run.profiles=develop`), `stale-h2-db-changeset-rename`, `flock-yellow-dark-mode-restraint` (caption accent `#ffcc00`), `screencast-mp4-flicker`.
+Login creds, dev-data seeding steps, port(s) / `BASE_URL`, and the brand accent are per-project. Pull them at record time from your agent's persistent memory or a project notes file (saving them back once found), or ask the user. Never bake them into this skill or the harness — it stays project-agnostic so any running app can be recorded, by any agent.

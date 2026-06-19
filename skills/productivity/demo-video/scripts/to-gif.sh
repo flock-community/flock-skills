@@ -2,6 +2,8 @@
 # webm -> looping GIF. Short clips only; tradeoffs vs mp4 in REFERENCE.md.
 set -euo pipefail
 
+command -v ffmpeg >/dev/null || { echo "ffmpeg not found — install it (macOS: brew install ffmpeg | Linux: sudo apt-get install -y ffmpeg)." >&2; exit 127; }
+
 [ "$#" -ge 2 ] || { echo "usage: to-gif.sh out.gif in.webm [fps=15] [width=960]" >&2; exit 2; }
 out="$1"; in="$2"; fps="${3:-15}"; width="${4:-960}"
 

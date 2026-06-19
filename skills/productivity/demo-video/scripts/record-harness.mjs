@@ -1,20 +1,24 @@
 // STEPS=/path/to/steps.mjs must default-export:
 //   async ({ page, caption, section, sleep, env, BASE }) => { ... }
 import { createRequire } from 'node:module';
-import { pathToFileURL } from 'node:url';
-import { resolve } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { resolve, dirname } from 'node:path';
 import fs from 'node:fs';
 
-// Resolve Playwright from the PROJECT (cwd), not this globally-installed harness file.
+const HERE = dirname(fileURLToPath(import.meta.url));
+// Prefer the project's (cwd) Playwright; fall back to one installed near the harness or globally.
 const req = createRequire(process.cwd() + '/');
 function loadChromium() {
   for (const pkg of ['@playwright/test', 'playwright']) {
     try {
-      const mod = req(req.resolve(pkg, { paths: [process.cwd()] }));
+      const mod = req(req.resolve(pkg, { paths: [process.cwd(), HERE] }));
       if (mod.chromium) return mod.chromium;
     } catch { /* try next */ }
   }
-  throw new Error('Playwright not found in ' + process.cwd() + ' — run from the project root (or `npm i -D @playwright/test`).');
+  throw new Error(
+    'Playwright not found. Install it (project: `npm i -D @playwright/test`, or global: ' +
+    '`npm i -g playwright`), then `npx playwright install chromium`.',
+  );
 }
 const chromium = loadChromium();
 
@@ -174,7 +178,12 @@ async function run() {
     console.error('STEPS module must default-export an async function'); process.exit(2);
   }
 
-  const browser = await chromium.launch({ headless: env.HEADLESS, slowMo: env.SLOWMO });
+  const launchArgs = (process.env.CHROMIUM_ARGS || '').split(' ').filter(Boolean);
+  const noSandbox = process.env.CHROMIUM_NO_SANDBOX === '1'
+    || (typeof process.getuid === 'function' && process.getuid() === 0)
+    || !!process.env.CI;
+  if (noSandbox) launchArgs.push('--no-sandbox', '--disable-dev-shm-usage');
+  const browser = await chromium.launch({ headless: env.HEADLESS, slowMo: env.SLOWMO, args: launchArgs });
   const ctxOpts = {
     viewport: VIEW,
     recordVideo: { dir: env.VIDEO_DIR, size: VIEW },

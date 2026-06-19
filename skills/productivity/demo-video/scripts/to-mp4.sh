@@ -4,6 +4,8 @@
 # pulse. See REFERENCE.md "The -qp flicker trap". QP=0 = lossless fallback.
 set -euo pipefail
 
+command -v ffmpeg >/dev/null || { echo "ffmpeg not found — install it (macOS: brew install ffmpeg | Linux: sudo apt-get install -y ffmpeg)." >&2; exit 127; }
+
 QP="${QP:-16}"
 FPS="${FPS:-25}"
 W="${W:-1440}"

@@ -1,4 +1,4 @@
-// Pull login creds / ports / brand color from project memory — do not hardcode.
+// Pull login creds / ports / brand color from your agent's memory or notes, or ask the user — do not hardcode.
 // Flatten flickery modal backdrops at record time (no code in here):
 //   INJECT_CSS='.MuiBackdrop-root{background-color:#1b1b1b !important}.MuiDialog-paper{box-shadow:none !important}'
 
