@@ -138,9 +138,43 @@ When one beat needs UI the shipped build doesn't mount (e.g. an editable view ga
 3. Concat with `to-mp4.sh out.mp4 seg1.webm seg2.webm`.
 Keep demo-only edits (test-data enrichment, build flags) on a throwaway branch — never merge them.
 
+## Native / canvas apps (Compose, Flutter, games) — Playwright can't drive them
+
+Compose Multiplatform / Flutter / Unity / SwiftUI-canvas render to a single `<canvas>` or native surface: **no DOM**, so `getByRole`/`getByText` and every harness helper no-op. Don't try to drive the app UI with Playwright.
+
+- Drive the app with the platform's UI-test runner and screen-record the device framebuffer:
+  - **iOS sim**: start `xcrun simctl io <udid> recordVideo --codec h264 --force seg.mov` in the background, run the flow (Maestro / XCUITest), then `kill -INT` the recorder to finalize — SIGKILL/SIGTERM corrupts the mov. Records the screen only (no window chrome). Keep it all in one shell call so the PID is in scope: `rec & PID=$!; maestro ...; kill -INT $PID; wait $PID`.
+  - **Android emulator**: `adb shell screenrecord` (3-min cap — loop for longer).
+- Only the genuinely-web parts (a Mailpit inbox, an admin page, a confirm link) get the Playwright harness. Record those as a **separate segment**, then composite. Segments with identical on-screen data can be reused across re-records — re-shoot only the segment that changed.
+- **Launch overhead varies**: Maestro `launchApp` adds ~12–18s of springboard + splash before the app's first screen, and the offset differs every run. Don't hardcode the trim — after recording, sample frames (`ffmpeg -ss N -i seg.mov -frames:v 1 f.png`) to find when the first app screen lands, then `-ss` to just before it.
+- **Mixed orientation** (portrait phone + landscape browser): normalize everything to one portrait canvas (e.g. `1080x1920`) with `scale=...:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=<brand>`. `to-mp4.sh`'s NORM already pads each input to the target size, so concat absorbs differing input sizes; or pad each segment yourself onto a brand-colored canvas before concat.
+
+## Branded intro/outro + chapter cards (cheap, high-impact polish)
+
+Bookend the demo with an intro/outro card and label each chapter. Two rules make it look intentional rather than stock:
+1. **One canvas everywhere.** Use the same background for the cards *and* the per-segment letterbox/pad (`pad=...:color=<bg>`). That continuity is what makes cuts read as one piece, not stitched clips.
+2. **Use the app's real identity.** Pull the actual logo (`$server/static/logo.png` or a repo asset), accent colors from the real theme, and a rounded system font (`ui-rounded`) — not generic title-slide styling.
+
+Don't reach for `drawtext` — Homebrew ffmpeg 8.x ships without libfreetype (`No such filter: 'drawtext'`), and HTML/CSS gives better kerning + the logo for free. Author each card/label as a small HTML file and screenshot them with **`scripts/render-cards.mjs`** (full-frame cards opaque; chapter labels a transparent pill via `omitBackground`, positioned top/bottom):
+
+```json
+// cards.json  →  CARDS=cards.json node scripts/render-cards.mjs   (run from project root)
+{ "width": 1080, "height": 1920, "dir": "/tmp/demo/cards",
+  "cards": [ { "html": "intro.html", "out": "intro.png" },
+             { "html": "lbl1.html",  "out": "lbl1.png", "transparent": true } ] }
+```
+
+Composite:
+- **Intro/outro from a still** — `-loop 1 -t 2.6 -i intro.png -vf "fps=30,fade=t=in:st=0:d=0.4,fade=t=out:st=2.2:d=0.4"`. Keep cards ~2.5s with 0.4s fades.
+- **Chapter label** timed to a segment's first beat — overlay the transparent PNG: `[seg][lbl]overlay=0:0:enable='lt(t\,3)'` (pill shows ~3s then gone).
+- **Portrait recording onto the brand canvas** — `scale=W:H:force_original_aspect_ratio=decrease,pad=W:H:(ow-iw)/2:(oh-ih)/2:color=<bg>`.
+- Normalize all pieces (cards + segments) to the same size/fps, `concat` them, then one final `-qp` encode (to-mp4.sh flags).
+
 ## Troubleshooting
 
 - **Empty / 0-byte webm** → the context wasn't closed before reading; the harness handles this in `finally`. Don't read `VIDEO_DIR` before it prints `VIDEO_FILES=`.
+- **Harness `sleep` no-ops / throws `waitForTimeout is not a function`** → it's `sleep(page, ms)`, not `sleep(ms)`. And steps receive only the harness's own config as `env` — read custom vars from `process.env`, not `env.MY_VAR`.
+- **Showing a PDF in a recording** → headless Chromium *downloads* `file://` PDFs (`page.goto` errors "Download is starting"), it doesn't render them. Rasterize first: `pdftoppm -png -r 150 file.pdf out`, then show the PNG in a small HTML wrapper (`<img>` on a neutral bg) and record that page.
 - **Caption missing after a step** → it was a full navigation; re-call `caption()` after the `goto`.
 - **Flicker remains after `to-mp4.sh`** → rerun with `QP=0` (lossless). The source VP8 has minor inherent flat-area shimmer the transcode can't fully remove; recording at a *smaller* viewport raises quality-per-pixel.
 - **Flicker only on modals/dialogs** → first confirm it's visible *outside* QuickTime (see below); if real in the webm, the semi-transparent backdrop is the mid-tone culprit — flatten it with `INJECT_CSS` (see "Flicker the `-qp` fix doesn't cover").
