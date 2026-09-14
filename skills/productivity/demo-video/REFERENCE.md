@@ -60,6 +60,8 @@ ffmpeg -i a.webm -i b.webm -filter_complex \
 
 Normalizing fps/scale/sar before concat avoids judder when segments differ. Env overrides on the script: `QP=`, `FPS=`, `W=`, `H=`.
 
+**`W`/`H` default to the first input's own dimensions**, so a take recorded at anything other than 1440x900 keeps its canvas instead of being silently pillarboxed into one (that wastes exactly the pixels a smaller viewport was chosen to gain — and a smaller viewport is the main lever on legibility *and* file size). Pass `W=`/`H=` only to pad onto a different canvas on purpose, e.g. a portrait take onto a brand background. Mixed-size inputs are all normalized onto the **first** input's canvas, so record the segments of one video at one size.
+
 ## GIF recipe & tradeoffs
 
 `scripts/to-gif.sh out.gif in.webm [fps=15] [width=960]` does two-pass palettegen/paletteuse (far better than a naive single pass):
@@ -95,7 +97,7 @@ Use these instead of raw `locator.click()` so the take reads as a person, not a 
 
 `target` is a CSS string or a Locator. The biggest "natural" lever isn't the cursor though — it's **pacing for causality**: caption the cause → act → pause → `scrollTo` the consequence into frame → hold ≥2s (≥3s for a hero change) so the viewer registers what changed and why.
 
-Env: `BASE_URL`, `VIDEO_DIR`, `STEPS` (required), `SEGMENT` (free-form, read in steps via `env.SEGMENT`), `WIDTH`, `HEIGHT`, `SLOWMO`, `HEADLESS=0` to watch, `TIMEOUT`, `STORAGE_STATE` (reuse auth across segments — load if the file exists, steps can save to it to skip re-login), `INJECT_CSS` (CSS re-injected on every load — e.g. flatten flickery modal backdrops), `CHROMIUM_NO_SANDBOX=1` (add `--no-sandbox --disable-dev-shm-usage` for containers/cloud; auto-on as root or when `CI` is set), `CHROMIUM_ARGS` (extra space-separated Chromium flags).
+Env: `BASE_URL`, `VIDEO_DIR`, `STEPS` (required), `SEGMENT` (free-form, read in steps via `env.SEGMENT`), `WIDTH`, `HEIGHT`, `SLOWMO`, `HEADLESS=0` to watch, `TIMEOUT`, `STORAGE_STATE` (reuse auth across segments — load if the file exists, steps can save to it to skip re-login), `INJECT_CSS` (CSS re-injected on every load — e.g. flatten flickery modal backdrops), `CHROMIUM_NO_SANDBOX=1` (add `--no-sandbox --disable-dev-shm-usage` for containers/cloud; auto-on as root or when `CI` is set), `CHROMIUM_ARGS` (extra space-separated Chromium flags), `SERVICE_WORKERS=block` (stop the app registering a service worker — set it for any PWA whose network you are mocking; see Troubleshooting).
 
 ### Caption bar
 A fixed bottom-center pill (`#__demo_caption__`, brand accent left border). The DOM is wiped on every full navigation, so `caption()` re-creates the element if missing — **call it again after each `page.goto`/route change**.
@@ -137,6 +139,44 @@ When one beat needs UI the shipped build doesn't mount (e.g. an editable view ga
 2. Temporarily flip the gate (vite/HMR or a local edit), record **segment 2** (`SEGMENT=2`, different `VIDEO_DIR`), then **revert the edit** so the worktree stays clean.
 3. Concat with `to-mp4.sh out.mp4 seg1.webm seg2.webm`.
 Keep demo-only edits (test-data enrichment, build flags) on a throwaway branch — never merge them.
+
+## Before/after: demoing a change you can't see
+
+Hit areas, spacing, z-order, focus rings, tap targets — before and after are the same screenshot, so a straight take of the fix shows nothing at all. Record **two segments of the same app** and let the annotations carry the argument.
+
+**Flip the code between segments.** Vite/HMR picks it up, so nothing needs rebuilding:
+
+```bash
+git show origin/main:src/Foo.tsx > src/Foo.tsx        # segment 1: the bug
+… record VIDEO_DIR=/tmp/sc-before SEGMENT=1 …
+git checkout HEAD -- src/Foo.tsx                      # segment 2: the fix
+… record VIDEO_DIR=/tmp/sc-after  SEGMENT=2 …
+git status --short                                    # MUST be clean before you walk away
+```
+
+Verify the flip actually landed before each take — a one-liner that prints the measurement you are about to put on screen (`boundingBox().height` → `32` then `44`). A take recorded against the wrong build looks perfect and says the opposite of what you claim.
+
+**Reset app state before *every* segment, not once.** If a take mutates data (picks an option, toggles a filter), the next take starts from that mutation — so the "before" half opens in the "after" state, and a beat that should show a change becomes a no-op. Re-seed between segments; it is two seconds and it is invisible when you forget, which is the dangerous kind of bug.
+
+**Annotate from the live DOM** with `scripts/annotate.mjs` — `box()` returns the rect it drew, so the same measured number goes into the on-screen label *and* the caption, and the video becomes evidence rather than narration:
+
+```js
+const a = await box(page, trigger, { color: RED })                       // measure + outline
+await box(page, trigger, { color: RED, label: `${Math.round(a.height)} px tall` })
+await bandBox(page, { x: a.x, y: rule.y, width: a.width, height: a.y - rule.y },
+              { color: RED, label: `${Math.round(a.y - rule.y)} px of dead space` })   // the gap between elements
+await crosshair(page, x, y, { color: RED, label: 'a thumb aiming 6 px high' })
+await tapAt(page, x, y)                                                  // a COORDINATE, not an element
+```
+
+- `tapAt` is the point of the exercise: the harness's `click()` aims at an element's centre, so it can never reproduce a near-miss. Derive the coordinate from something stable across both builds (`pill.top - 6`), not an absolute — the two builds differ by a few px and the tap must be provably identical.
+- Boxes are `position:fixed` at client rects: **measure after scrolling has settled, and don't scroll again** while they are up. `frame()` settles first and clamps to what the document can actually scroll.
+- Everything fades in over ~280ms — hold past that before the beat's pause means anything.
+- z-index ladder: app < annotations (…640) < title card (…646) < **harness caption pill (…647)**. The caption outranks a full-frame card, which is why `titleCard()` hides it for the duration.
+
+**Cut between the segments on a dark card.** Segment 2 opens with a `page.goto`, so the join is a white browser frame — restless, and it reads as a glitch rather than a scene change. End segment 1 with a `titleCard()` recap and open segment 2 with its own: the cut goes dark-to-dark and the two halves become impossible to confuse.
+
+**Keep the same card in frame for both halves.** Pick the demo target by a property, not an index (`.filter({ has: … })`), and beware an accessible name that flips as the UI toggles — `Show lineup` becomes `Hide lineup` once open, and a locator built on the closed name stops matching mid-take. Match both (`/lineup/i`).
 
 ## Native / canvas apps (Compose, Flutter, games) — Playwright can't drive them
 
@@ -182,6 +222,15 @@ Composite:
 - **Injected CSS never applies** → you used `addInitScript`; switch to `INJECT_CSS` (harness injects per `load` via `page.evaluate`). Also confirm you're not losing it to a `page.goto` reload — navigate in-app instead.
 - **Restless / flashing between screens** → full-page `page.goto`s; navigate in-app (SPA) so routes change without reload.
 - **Selector flaky / beat missing from video** → check stderr for `SECTION_FAIL[name]`; `section()` logged and skipped it.
+- **Mocked app works on the first load, then dies after a reload / second navigation** → a **service worker** took control. `page.route()` does not reach a controlled page, so every mocked call goes straight to the real network. Set `SERVICE_WORKERS=block`. Serving an empty `sw.js` does not fix it — the empty script still registers and activates, which is exactly why the first load (no controller yet) looks fine and only the next one breaks. If you cannot reach the context options (e.g. mocking from inside a fixture module), neutralise it from the page instead: `page.addInitScript(() => { navigator.serviceWorker.register = () => new Promise(() => {}) })` — leave the promise pending rather than rejecting it, so a fire-and-forget registration at bootstrap raises no unhandled rejection mid-take.
+- **App hangs on a splash / loading screen and never renders** → when you are mocking an API, suspect **contract drift in the mock** before anything else. A fixture that has fallen behind the real payload shape usually fails as a *hang*, not an error: a guard that reads `user.teams.length`, or a query that rejects a malformed body and retries, leaves the app on its loading state with nothing in the console. Diff one mocked payload against the current API types before debugging anything else.
+- **`route.fulfill({ status: 204, body: '' })` shows up as `net::ERR_ABORTED`** → give the fulfilment a real body (`200` + JSON). An app that treats that probe as a failed health check will sit on its cold-start/splash state.
+- **`check-deps.sh` says "playwright not installed" but it is** → wrong cwd. Playwright often lives in the frontend sub-package (`app/`), not the repo root; run the check, probes and the harness from wherever `node_modules` actually is.
+- **The caption pill sits on top of the app's own bottom bar** → many apps fix a tab bar or toolbar to the bottom, exactly where the pill parks. `caption()` only styles the element when it has to create it, so pre-create it higher (`bottom:120px`) in your steps module before the first `caption()` call.
+- **Output is letterboxed / pillarboxed** → you passed `W=`/`H=` (or an old copy of `to-mp4.sh` hardcoded 1440x900) and the source is a different shape. Drop the overrides: the canvas now defaults to the first input's own size.
+- **A title/overlay card renders at the browser's default font size** → `inherit` is not a valid family inside the `font` shorthand, so `font:800 40px/1.2 inherit` is dropped *whole* and silently. Spell the stack out in every rule.
+- **The caption pill is burned across a full-frame card** → it sits above every other injected layer by design; hide it for the card's duration (`annotate.mjs`'s `titleCard()` does).
+- **A beat's annotations are drifting off their targets** → something scrolled after they were drawn; they are `position:fixed` at client rects. Re-measure after the scroll, or move the scroll before the first `box()`.
 - **File too big to share** → lower viewport (`WIDTH`/`HEIGHT`) at record time, or accept `QP=18`; don't switch to `-crf` to shrink it.
 - **Won't autoplay inline on iPhone** → it's webm; ship the mp4.
 
