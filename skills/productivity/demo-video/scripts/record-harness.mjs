@@ -34,6 +34,10 @@ const env = {
   TIMEOUT: +(process.env.TIMEOUT || 20000),
   STORAGE_STATE: process.env.STORAGE_STATE, // reuse auth across segments: load if present, steps can save to it
   INJECT_CSS: process.env.INJECT_CSS, // CSS injected on every page load — e.g. flatten flickery modal backdrops
+  // 'block' stops the app registering a service worker. Set it for any PWA whose network you are
+  // mocking: page.route() does not reach a page a worker controls, and the failure is delayed —
+  // the first load has no controller and works, so only the *second* navigation comes up dead.
+  SERVICE_WORKERS: process.env.SERVICE_WORKERS || 'allow',
 };
 const VIEW = { width: env.WIDTH, height: env.HEIGHT };
 
@@ -189,6 +193,7 @@ async function run() {
     recordVideo: { dir: env.VIDEO_DIR, size: VIEW },
     deviceScaleFactor: 1,
   };
+  if (env.SERVICE_WORKERS === 'block') ctxOpts.serviceWorkers = 'block';
   if (env.STORAGE_STATE && fs.existsSync(env.STORAGE_STATE)) ctxOpts.storageState = env.STORAGE_STATE;
   const context = await browser.newContext(ctxOpts);
   const page = await context.newPage();
