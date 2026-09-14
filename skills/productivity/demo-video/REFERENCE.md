@@ -170,7 +170,7 @@ await tapAt(page, x, y)                                                  // a CO
 ```
 
 - `tapAt` is the point of the exercise: the harness's `click()` aims at an element's centre, so it can never reproduce a near-miss. Derive the coordinate from something stable across both builds (`pill.top - 6`), not an absolute — the two builds differ by a few px and the tap must be provably identical.
-- Boxes are `position:fixed` at client rects: **measure after scrolling has settled, and don't scroll again** while they are up. `frame()` settles first and clamps to what the document can actually scroll.
+- Boxes are `position:fixed` at client rects: **measure after scrolling has settled, and don't scroll again** while they are up. `frame()` settles first, and scrolls whichever container actually owns the content — the window when it scrolls, otherwise `scrollIntoView` on the element, which is the only thing that moves an app-shell layout (`body{overflow:hidden}` around an inner pane). On that path the target is centred rather than placed at `top`; pass `block` to choose.
 - Everything fades in over ~280ms — hold past that before the beat's pause means anything.
 - z-index ladder: app < annotations (…640) < title card (…646) < **harness caption pill (…647)**. The caption outranks a full-frame card, which is why `titleCard()` hides it for the duration.
 
@@ -228,8 +228,10 @@ Composite:
 - **`check-deps.sh` says "playwright not installed" but it is** → wrong cwd. Playwright often lives in the frontend sub-package (`app/`), not the repo root; run the check, probes and the harness from wherever `node_modules` actually is.
 - **The caption pill sits on top of the app's own bottom bar** → many apps fix a tab bar or toolbar to the bottom, exactly where the pill parks. `caption()` only styles the element when it has to create it, so pre-create it higher (`bottom:120px`) in your steps module before the first `caption()` call.
 - **Output is letterboxed / pillarboxed** → you passed `W=`/`H=` (or an old copy of `to-mp4.sh` hardcoded 1440x900) and the source is a different shape. Drop the overrides: the canvas now defaults to the first input's own size.
+- **`to-mp4.sh` dies on `Invalid argument` from the filter graph** → an odd-sized source (a 1512x945 laptop-sized take): libx264 + `yuv420p` needs even dimensions and never says so. The canvas is rounded down to even, so update your copy of the script.
 - **A title/overlay card renders at the browser's default font size** → `inherit` is not a valid family inside the `font` shorthand, so `font:800 40px/1.2 inherit` is dropped *whole* and silently. Spell the stack out in every rule.
 - **The caption pill is burned across a full-frame card** → it sits above every other injected layer by design; hide it for the card's duration (`annotate.mjs`'s `titleCard()` does).
+- **A beat's boxes are painted off-screen / the frame never moved** → the content scrolls in an inner container, not the window, so a window scroll moves nothing and reports success. `frame()` falls back to `scrollIntoView`; if you scrolled by hand with `window.scrollTo`, scroll the element instead.
 - **A beat's annotations are drifting off their targets** → something scrolled after they were drawn; they are `position:fixed` at client rects. Re-measure after the scroll, or move the scroll before the first `box()`.
 - **File too big to share** → lower viewport (`WIDTH`/`HEIGHT`) at record time, or accept `QP=18`; don't switch to `-crf` to shrink it.
 - **Won't autoplay inline on iPhone** → it's webm; ship the mp4.

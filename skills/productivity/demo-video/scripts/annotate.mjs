@@ -143,11 +143,18 @@ export async function tapAt(page, x, y, opts = {}) {
 /**
  * Scroll a target to `top` and settle, so a beat's measurements are stable.
  *
- * The scroll is clamped to what the document can actually do, and skipped when that leaves under
- * 8px to travel. That covers both ways this bites: an element already in place (a few px of scroll
- * only jitters the frame), and one near the end of the page, where the request exceeds the scroll
- * limit — there the element stops short of `top`, which is fine, and a second call then correctly
- * does nothing instead of re-attempting an impossible scroll on every beat.
+ * The window scroll is clamped to what the document can actually do, and skipped when that leaves
+ * under 8px to travel. That covers both ways this bites: an element already in place (a few px of
+ * scroll only jitters the frame), and one near the end of the page, where the request exceeds the
+ * scroll limit — there the element stops short of `top`, which is fine, and a second call then
+ * correctly does nothing instead of re-attempting an impossible scroll on every beat.
+ *
+ * When the window cannot scroll at all, the content is in an inner container — the usual app-shell
+ * layout, `body{overflow:hidden}` around a scrolling pane, the same one whose fixed bottom bar
+ * collides with the caption pill. Scrolling the window there moves nothing and reports success, so
+ * fall back to `scrollIntoView` on the element, which works in whatever container owns it. That
+ * path centres the target instead of honouring `top` (pass `block` to choose); an unframed beat
+ * paints its boxes off-screen with no error, so centred beats precise.
  */
 export async function frame(page, target, opts = {}) {
   const loc = asLoc(page, target).first()
@@ -155,13 +162,17 @@ export async function frame(page, target, opts = {}) {
   if (!rect) return
   const moved = await page.evaluate((dy) => {
     const max = document.documentElement.scrollHeight - window.innerHeight
+    if (max <= 0) return null // the window doesn't scroll — an inner container does
     const from = window.scrollY
     const to = Math.max(0, Math.min(max, from + dy))
     if (Math.abs(to - from) < 8) return 0
     window.scrollTo({ top: to, behavior: 'smooth' })
     return to - from
   }, rect.y - (opts.top ?? 300))
-  await page.waitForTimeout(moved ? (opts.settle ?? 900) : 200)
+  if (moved === null) {
+    await loc.evaluate((el, block) => el.scrollIntoView({ behavior: 'smooth', block }), opts.block ?? 'center')
+  }
+  await page.waitForTimeout(moved === 0 ? 200 : (opts.settle ?? 900))
 }
 
 /**
