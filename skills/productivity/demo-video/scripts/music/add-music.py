@@ -4,14 +4,16 @@
 # ///
 """Put a song under a finished demo mp4, with no voice.
 
-  uv run add-music.py <demo.mp4> <out.mp4> --song <song.json> [--cut <s>] [--lufs <db>]
+  uv run add-music.py <demo.mp4> <out.mp4> --song <song.json> [--cut <s> [--bad <s> ...]] [--lufs <db>]
 
 The song starts at 0, so its opening plays first, and its real ending lands on the last frame:
 a stretch from the middle is skipped, from one beat to another a whole number of 8-beat phrases later,
 with a short crossfade. The last frame of the video is held for the part that does not divide out
 (under one phrase). Without --cut it writes the three best cut candidates as <out>-cut<s>.mp4 for a
 listening round; re-run with the chosen --cut. Any audio already in the demo is dropped.
-<song.json> is written by analyse.py and sits next to the song file, in the project that owns the song.
+<song.json> is written by analyse.py and sits next to the song file. --cut also saves the listener's
+verdicts in it (the chosen cut as good, each --bad one as bad): a later round skips the bad cuts and
+offers a good one first.
 """
 import argparse
 import json
@@ -40,7 +42,8 @@ def duration(path):
 
 class Song:
     def __init__(self, path):
-        meta = json.load(open(path))
+        self.path, self.meta = path, json.load(open(path))
+        meta = self.meta
         self.file = os.path.join(os.path.dirname(os.path.abspath(path)), meta['file'])
         self.lufs, self.end, self.beats = meta['lufs'], meta['end'], np.array(meta['beats'])
         rate, n, hop = 22050, 2048, 512
@@ -58,6 +61,17 @@ class Song:
         before = self.spec[(self.t >= lo) & (self.t < b[i])].mean(0)
         after = self.spec[(self.t >= b[i]) & (self.t < hi)].mean(0)
         return 1 - before @ after / (np.linalg.norm(before) * np.linalg.norm(after))
+
+    def verdict(self, i, j):
+        """'good' or 'bad' when a listener judged this cut before, else None."""
+        for c in self.meta.get('cuts', []):
+            if abs(c['cut'] - self.beats[i]) < 0.05 and abs(c['resume'] - self.beats[j]) < 0.05:
+                return c['verdict']
+
+    def judge(self, i, j, verdict):
+        kept = [c for c in self.meta.get('cuts', []) if abs(c['cut'] - self.beats[i]) >= 0.05 or abs(c['resume'] - self.beats[j]) >= 0.05]
+        self.meta['cuts'] = kept + [{'cut': float(self.beats[i]), 'resume': float(self.beats[j]), 'verdict': verdict}]
+        json.dump(self.meta, open(self.path, 'w'), indent=1)
 
     def cuts(self, video, earliest, latest):
         """(cut beat, resume beat) pairs whose music is at least `video` long, best section change first."""
@@ -96,6 +110,7 @@ def main():
     p.add_argument('out')
     p.add_argument('--song', required=True, help='song json from analyse.py, next to the song file')
     p.add_argument('--cut', type=float, help='song time to cut at, from a previous candidate round')
+    p.add_argument('--bad', type=float, nargs='*', default=[], help='with --cut: cuts of that round that sounded harsh; saved in the song json and not offered again')
     p.add_argument('--lufs', type=float, default=-18, help='loudness the whole song is set to (default -18 LUFS); the cut excerpt measures about 1.5 dB under it')
     a = p.parse_args()
 
@@ -109,17 +124,31 @@ def main():
     pairs = song.cuts(video, earliest=opening, latest=max(video / 3, opening + 2))
     if not pairs:
         sys.exit('no cut point fits this demo length')
+    def at(s):
+        found = [pair for pair in pairs if abs(song.beats[pair[0]] - s) < 0.05]
+        if not found:
+            sys.exit(f'no cut at {s}s for this demo length; run without --cut for the candidates')
+        return found[0]
+
     if a.cut is not None:
-        chosen = [pair for pair in pairs if abs(song.beats[pair[0]] - a.cut) < 0.05]
-        if not chosen:
-            sys.exit(f'no cut at {a.cut}s for this demo length; run without --cut for the candidates')
-        render(a.video, song, *chosen[0], a.lufs, a.out)
+        chosen, bad = at(a.cut), [at(s) for s in a.bad]
+        render(a.video, song, *chosen, a.lufs, a.out)
+        song.judge(*chosen, 'good')
+        for pair in bad:
+            song.judge(*pair, 'bad')
         return
+    # Cuts a listener called harsh are out, one they called good comes first. Candidates are at least a
+    # phrase apart: the beat next to the best one is the same spot one beat off, not another option.
+    pairs = sorted((p for p in pairs if song.verdict(*p) != 'bad'), key=lambda p: song.verdict(*p) != 'good')
+    picked = []
+    for pair in pairs:
+        if len(picked) < 3 and all(abs(pair[0] - other[0]) >= JUMP_BEATS for other in picked):
+            picked.append(pair)
     base, ext = os.path.splitext(a.out)
     print('cut candidates (song time = video time, since the song starts at 0):')
-    for i, j in pairs[:3]:
+    for i, j in picked:
         render(a.video, song, i, j, a.lufs, f'{base}-cut{song.beats[i]:.2f}{ext}')
-    print('Listen, pick one, and re-run with --cut <s>.')
+    print('Listen, pick one, and re-run with --cut <s> (and --bad <s> ... for the harsh ones).')
 
 
 if __name__ == '__main__':
