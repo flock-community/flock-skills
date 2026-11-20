@@ -1,6 +1,6 @@
 ---
 name: demo-video
-description: Produce a polished, flicker-free demo video (or GIF) of a running web app by driving it with headless Playwright, injecting an on-screen caption bar, recording 1440x900 webm, transcoding to mp4, and frame-verifying. Use when the user wants to record an app demo, screencast, product walkthrough, or feature showcase of a live local/staging web app, or convert a screen recording to a shareable mp4/GIF. Pulls project specifics (login, dev-data seeding, ports) from agent memory/notes or the user at use-time.
+description: Produce a polished, flicker-free demo video (or GIF) of a running web app by driving it with headless Playwright, injecting an on-screen caption bar, recording 1440x900 webm, transcoding to mp4, and frame-verifying. Use when the user wants to record an app demo, screencast, product walkthrough, or feature showcase of a live local/staging web app, or convert a screen recording to a shareable mp4/GIF. Also records a Tauri desktop app's native window (macOS or Linux; a WKWebView/WebKitGTK window that Playwright cannot drive) through an embedded WebDriver server and an ffmpeg screen capture, and puts a music bed from the project's own song under a finished demo mp4. Use for those too: "record the desktop app", "show the Tauri app", "add music to the demo". Pulls project specifics (login, dev-data seeding, ports, demo launch env, song) from agent memory/notes or the user at use-time.
 ---
 
 # demo-video — record a running web app
@@ -8,6 +8,8 @@ description: Produce a polished, flicker-free demo video (or GIF) of a running w
 A repeatable pipeline: **record** the live app with Playwright (live caption bar) → optionally **concat** segments → **transcode** webm→mp4 flicker-free → **verify** frames. The app must already be running.
 
 Agent- and environment-agnostic: it shells out to bundled scripts (no Claude-only tools), records **headless** so it runs on a laptop, server, container, or CI box, and needs only Node + Playwright (Chromium) + `ffmpeg` on `PATH` — step 1 checks for them.
+
+**A Tauri desktop app?** Its native window has a DOM, but Playwright cannot attach to it. Follow [TAURI.md](TAURI.md): the app is launched with an embedded WebDriver server, driven with WebdriverIO, and its window region is captured with ffmpeg. Transcode, verify and deliver are the steps below.
 
 **Not a web app?** Compose Multiplatform / Flutter / Unity / native apps render to a canvas with no DOM — Playwright can't drive them. Drive with the platform's UI-test runner (Maestro / XCUITest) + `simctl recordVideo` (iOS) or `adb screenrecord` (Android), and point the Playwright harness only at the genuinely-web parts (a Mailpit inbox, a confirm page) as separate segments to composite. See "Native / canvas apps" in [REFERENCE.md](REFERENCE.md).
 
@@ -33,9 +35,9 @@ Hit areas, spacing, z-order, focus rings: before and after are the same screensh
 
 ## Pipeline
 
-1. **Check the toolchain** — run `scripts/check-deps.sh` from the project root and install whatever it flags: Node.js, `ffmpeg`/`ffprobe`, and Playwright + its Chromium browser (`npx playwright install chromium`). Recording is **headless** by default, so a server / container / CI box is fine; if Chromium won't launch there, set `CHROMIUM_NO_SANDBOX=1` (auto-on as root or when `CI` is set).
+1. **Check the toolchain** — run `scripts/check-deps.sh` from the project root and install whatever it flags: Node.js, `ffmpeg`/`ffprobe`, and Playwright + its Chromium browser (`npx playwright install chromium`). The project has no Playwright and should not get one? Install it in a scratch folder (`npm init -y && npm i playwright`), pass that folder to `check-deps.sh`, and run the harness with that folder as working directory; the project's `package.json` stays untouched. Recording is **headless** by default, so a server / container / CI box is fine; if Chromium won't launch there, set `CHROMIUM_NO_SANDBOX=1` (auto-on as root or when `CI` is set).
 
-2. **Pull project specifics — don't hardcode.** You need the login user/creds, dev-data seeding steps, the app's port / `BASE_URL`, and the brand accent colour. If your agent keeps persistent memory or a project notes file, recall them from there (and save them back once found); otherwise ask the user. Confirm the app is up (backend + frontend) before recording — **and that the server on that port is serving YOUR build.** On a shared or multi-session machine a dev-server port can belong to a *different* checkout/worktree, so you'd silently record the wrong code; verify the listener's working dir (`lsof -a -p <pid> -d cwd` — the `-a` is required) or curl a served source file and grep your change. If the defaults are taken, boot your own backend + frontend on free ports and point the frontend dev-server's API proxy at your backend.
+2. **Pull project specifics — don't hardcode.** You need the login user/creds, dev-data seeding steps, the app's port / `BASE_URL`, and the brand accent colour. If your agent keeps persistent memory or a project notes file, recall them from there (and save them back once found); otherwise ask the user. Confirm the app is up (backend + frontend) before recording — **and that the server on that port is serving YOUR build.** On a shared or multi-session machine a dev-server port can belong to a *different* checkout/worktree, so you'd silently record the wrong code; verify the listener's working dir (`lsof -a -p <pid> -d cwd` — the `-a` is required) or curl a served source file and grep your change. If the defaults are taken, boot your own backend + frontend on free ports and point the frontend dev-server's API proxy at your backend. Also check that the checkout itself is current (`git fetch`, then `git status -sb` shows how far it is behind): a build of a checkout that is months behind its remote records an app that no longer looks like that. When it is behind, record from a fresh worktree of the remote branch and leave the user's checkout alone.
 
 3. **Write the steps module** — copy `scripts/steps.template.mjs` next to your work and fill in the real selectors/captions. It default-exports `async ({ page, caption, section, sleep, env, BASE }) => {…}`. Wrap each logical beat in `section('name', …)` so one bad selector doesn't abort the whole take; narrate with `caption(page, '…')` (re-inject after every full navigation).
 
@@ -74,6 +76,10 @@ Default to **mp4** (`to-mp4.sh`). It's the safe cross-platform share format (web
 
 One idea per caption; lead with the verb. Variable dwell beats uniform: snappy ~100–300ms during actions, **600–800ms pause** after a result lands, **≥1500ms** on a hero/summary beat. `slowMo` (default 300ms) spaces clicks automatically.
 
+## Music bed (optional)
+
+A song under the finished mp4, no voice-over: the song starts at 0, a stretch of its middle is skipped on the beat, and its real ending lands on the last frame. The skill ships no song; the project keeps its own song file and names it in its notes. Steps, the listening round for the cut, and the rules: [MUSIC.md](MUSIC.md).
+
 ## Branded cards (optional polish)
 
 A cheap, high-impact finish: intro/outro cards + per-chapter labels on one brand canvas (real logo, theme colors, rounded font). Author them as HTML, render with `scripts/render-cards.mjs` (run from the project root so Playwright resolves), overlay/concat with the segments. Recipe + ffmpeg snippets in [REFERENCE.md](REFERENCE.md) ("Branded intro/outro + chapter cards").
@@ -90,4 +96,6 @@ Two tests, both must pass: (1) is it about recording/encoding/capture, not the a
 ## Details
 
 - Recipes (transcode/concat/gif), the `-qp` trap, frame-verify, MUI helper snippets, multi-segment design, troubleshooting: [REFERENCE.md](REFERENCE.md).
+- Tauri desktop apps (app prep, capture on macOS and Linux, driving differences, troubleshooting): [TAURI.md](TAURI.md), scripts in `scripts/tauri/`.
+- Music bed: [MUSIC.md](MUSIC.md), scripts in `scripts/music/` (`analyse.py` once per song, `add-music.py` per video).
 - Engine: `scripts/record-harness.mjs` (rarely edited). Per-demo: `scripts/steps.template.mjs` (copy + edit). Annotation overlays (measured boxes, hatched bands, crosshairs, coordinate taps, title cards): `scripts/annotate.mjs`. Steps receive `{ page, caption, section, sleep, env, BASE, click, type, scrollTo, moveTo, pan }` — the last five drive the visible pointer / smooth scroll (see "Record calm, legible takes"). `STORAGE_STATE=` reuses auth across segments (load if present; steps can save to it to skip re-login). `INJECT_CSS=` re-injects CSS on every load (flatten flickery backdrops, etc.).

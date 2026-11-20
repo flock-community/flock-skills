@@ -99,6 +99,12 @@ Use these instead of raw `locator.click()` so the take reads as a person, not a 
 
 Env: `BASE_URL`, `VIDEO_DIR`, `STEPS` (required), `SEGMENT` (free-form, read in steps via `env.SEGMENT`), `WIDTH`, `HEIGHT`, `SLOWMO`, `HEADLESS=0` to watch, `TIMEOUT`, `STORAGE_STATE` (reuse auth across segments — load if the file exists, steps can save to it to skip re-login), `INJECT_CSS` (CSS re-injected on every load — e.g. flatten flickery modal backdrops), `CHROMIUM_NO_SANDBOX=1` (add `--no-sandbox --disable-dev-shm-usage` for containers/cloud; auto-on as root or when `CI` is set), `CHROMIUM_ARGS` (extra space-separated Chromium flags), `SERVICE_WORKERS=block` (stop the app registering a service worker — set it for any PWA whose network you are mocking; see Troubleshooting).
 
+### Code editors (Monaco, CodeMirror)
+An in-page code editor is not a form field, so three things differ:
+- **The `type` helper fails on it**: it calls `fill('')`, which needs an `<input>`, `<textarea>` or contenteditable. `click` a line of the editor, then `page.keyboard.type(text, { delay: 80 })`. Press `Escape` afterwards; the editor's suggestion popup otherwise stays in the take.
+- **A click cannot aim at a column.** After the click, place the caret through the editor's own API, e.g. Monaco: `page.evaluate(() => { const ed = monaco.editor.getEditors().find((e) => e.hasTextFocus()); ed.setPosition({ lineNumber: 1, column: 12 }); })`.
+- **Only the visible lines are in the DOM, and the scroll offset survives a content change.** When the content is replaced by something shorter, the editor can show an empty area and a wait on the new text times out although the text is there. Reset the scroll (`ed.setScrollTop(0)`) or reveal the line (`ed.revealLineNearTop(n)`) before waiting on or showing a result.
+
 ### Caption bar
 A fixed bottom-center pill (`#__demo_caption__`, brand accent left border). The DOM is wiped on every full navigation, so `caption()` re-creates the element if missing — **call it again after each `page.goto`/route change**.
 
