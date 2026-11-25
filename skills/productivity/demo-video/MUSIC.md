@@ -17,16 +17,18 @@ This skill ships no song. The song belongs to the project that is being demoed:
 ## Setting up a song (once per project)
 
 No song named in the project? Ask the user for one, and check with them that the project may use and commit it (its
-licence). Then:
+licence). Advise an instrumental song: a cut next to a sung line was heard as harsh in listening rounds, even when
+the instruments matched, and the script does not detect singing. Then:
 
 1. Store it, analyse it, and save the path to the json in the project's notes:
    ```bash
    uv run "$SKILL_DIR/scripts/music/analyse.py" docs/demo/music/theme.mp3   # writes theme.json next to it
    ```
 2. Run a first listening round with the user right away (the pipeline below), on the demo at hand or on any mp4 of
-   a usual demo length. The script cannot hear whether a cut is smooth. Its ranking is a guess, and two cuts with
-   almost the same score can sound smooth and harsh. Ask about every candidate, not only for the winner: which
-   cuts are smooth, which are harsh, and what the user hears.
+   a usual demo length. The script cannot hear whether a cut is smooth. It prints a predicted score per candidate
+   (1 = not noticed, 3 = harsh), and in listening rounds about one prediction in five was off by a point or more.
+   Ask about every candidate, not only for the winner: which cuts are smooth, which are harsh, and what the user
+   hears.
 3. Pass the answer back with `--cut <s> --bad <s> ...`. The script saves the verdicts in the json: later rounds
    skip the harsh cuts and offer a known-good one first. Commit the json with the song. Running `analyse.py` again
    overwrites the json and drops the verdicts.
@@ -52,11 +54,19 @@ licence). Then:
 - **Start and end.** The song starts at 0, so its opening plays first, and its real ending (the trailing silence
   trimmed) lands on the last frame.
 - **The cut.** A stretch of the middle is skipped: from one beat to a beat a whole number of 8-beat phrases later,
-  with a 0.3 s crossfade. The beats are tracked one by one, because a song's tempo can drift. Candidates are ranked by
-  a section change on both sides (spectral novelty) and sit within the first third of the video, after the opening
-  phrase. In listening rounds a late cut was heard and an early one was not. Candidates are at least one phrase
-  apart: the beats next to the best one are the same spot in the song one beat off, and in a listening round one
-  beat off was the difference between smooth and harsh.
+  with a 0.3 s crossfade. The beats are tracked one by one, because a song's tempo can drift. Candidates sit within
+  the first third of the video, after the song's opening phrase and its first 8 s, and are at least one phrase
+  apart.
+- **Which cuts sound good.** From listening rounds on six songs (55 scored cuts, one listener), two kinds:
+  - *Unnoticed*: on the first beat of a bar, the sound alike on both sides, the loudness within about 1 dB. How
+    far the cut skips made no difference.
+  - *Rise*: a step up in loudness of 3 dB or more, on the first beat of a bar where the song itself steps up. It
+    reads as the song's own build-up. The same cut one beat later was heard as harsh.
+
+  Heard as harsh: a cut off the bar, a jump in loudness where the song is steady, a cut in the song's first
+  seconds, and singing right after the cut. The script ranks the candidates by these rules and prints the kind and
+  a predicted score. When no candidate is expected to sound smooth it says so; another demo length or another song
+  may then do better. Where the bar starts is a guess from the bass, and it can be wrong for a song.
 - **A cut on an action.** A smooth cut that falls on a visible action in the video (a click, a result that lands)
   reads as the video gaining energy at that moment. When two candidates are both smooth, prefer the one whose cut
   time is closest to such a moment; the cut time is also the video time.

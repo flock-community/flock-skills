@@ -25,7 +25,8 @@ import tempfile
 import numpy as np
 
 JUMP_BEATS = 8      # the skip is whole 8-beat phrases (two bars of 4/4), so the rhythm stays in step
-WINDOW_BEATS = 8    # novelty compares this many beats before and after a beat
+SIDE = 1.5          # seconds compared on each side of a cut
+EARLIEST = 8.0      # cuts in a song's first seconds were heard as harsh
 XFADE = 0.3
 FPS = 25
 X264 = ['-c:v', 'libx264', '-preset', 'slow', '-qp', '16', '-x264-params',
@@ -49,18 +50,41 @@ class Song:
         rate, n, hop = 22050, 2048, 512
         raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', self.file, '-ac', '1', '-ar', str(rate), '-f', 'f32le', '-'],
                              capture_output=True, check=True).stdout
-        x = np.frombuffer(raw, dtype=np.float32)
-        frames = np.lib.stride_tricks.sliding_window_view(x, n)[::hop] * np.hanning(n)
-        self.spec = np.log1p(np.abs(np.fft.rfft(frames, axis=1)))
-        self.t = np.arange(len(self.spec)) * hop / rate
+        self.x, self.rate = np.frombuffer(raw, dtype=np.float32), rate
+        mag = np.abs(np.fft.rfft(np.lib.stride_tricks.sliding_window_view(self.x, n)[::hop] * np.hanning(n), axis=1))
+        self.spec = np.log1p(mag)
+        self.t = (np.arange(len(mag)) * hop + n / 2) / rate
+        # Where the bar starts is a guess: the beat position (of 4) with the most bass.
+        low = mag[:, :8].sum(1)
+        kick = [low[(self.t >= b - 0.03) & (self.t < b + 0.08)].mean() for b in self.beats]
+        self.downbeat = int(np.argmax([np.mean(kick[p::4]) for p in range(4)]))
 
-    def novelty(self, i):
-        """How different the beats after beat i sound from the beats before it: a section change."""
-        b = self.beats
-        lo, hi = b[max(i - WINDOW_BEATS, 0)], b[min(i + WINDOW_BEATS, len(b) - 1)]
-        before = self.spec[(self.t >= lo) & (self.t < b[i])].mean(0)
-        after = self.spec[(self.t >= b[i]) & (self.t < hi)].mean(0)
-        return 1 - before @ after / (np.linalg.norm(before) * np.linalg.norm(after))
+    def sound(self, lo, hi):
+        return self.spec[(self.t >= lo) & (self.t < hi)].mean(0)
+
+    def db(self, lo, hi):
+        return 10 * np.log10(np.mean(self.x[int(max(lo, 0) * self.rate):int(hi * self.rate)] ** 2) + 1e-12)
+
+    def alike(self, i, j):
+        """How alike the sound before the cut beat and after the resume beat is, 0 to 1."""
+        before, after = self.sound(self.beats[i] - SIDE, self.beats[i]), self.sound(self.beats[j], self.beats[j] + SIDE)
+        return before @ after / (np.linalg.norm(before) * np.linalg.norm(after))
+
+    def predict(self, i, j):
+        """(score, kind) a listener is expected to give this cut: 1 = not noticed, 3 = harsh.
+        The thresholds come from listening rounds on six songs (MUSIC.md); the score is a guess, not a verdict."""
+        cut, resume = self.beats[i], self.beats[j]
+        if (i - self.downbeat) % 4:
+            return 2.5, 'off the bar'
+        step = self.db(resume, resume + SIDE) - self.db(cut - SIDE, cut)
+        if abs(step) < 1:
+            alike = self.alike(i, j)
+            return (1, 'unnoticed') if alike >= 0.96 else (1.5, 'nearly alike') if alike >= 0.9 else (2.5, 'different sound')
+        if step >= 3:
+            # A step up works where the song itself steps up at that beat, and reads as its own build-up.
+            own = max(self.db(b, b + 0.5) - self.db(b - 0.5, b) for b in (cut, resume))
+            return (1, 'rise') if own >= 3 else (3, 'jump in loudness')
+        return 2, 'loudness step'
 
     def verdict(self, i, j):
         """'good' or 'bad' when a listener judged this cut before, else None."""
@@ -74,14 +98,14 @@ class Song:
         json.dump(self.meta, open(self.path, 'w'), indent=1)
 
     def cuts(self, video, earliest, latest):
-        """(cut beat, resume beat) pairs whose music is at least `video` long, best section change first."""
+        """(cut beat, resume beat) pairs whose music is at least `video` long, best predicted score first."""
         b, pairs = self.beats, []
         for i in np.nonzero((b >= earliest) & (b <= latest))[0]:
             # The latest resume beat, in phrase steps, that still leaves enough music.
-            js = [j for j in range(i + JUMP_BEATS, len(b) - WINDOW_BEATS, JUMP_BEATS) if b[i] + self.end - b[j] >= video]
+            js = [j for j in range(i + JUMP_BEATS, len(b) - JUMP_BEATS, JUMP_BEATS) if b[i] + self.end - b[j] >= video]
             if js:
                 pairs.append((i, js[-1]))
-        return sorted(pairs, key=lambda p: -(self.novelty(p[0]) + self.novelty(p[1])))
+        return sorted(pairs, key=lambda p: (self.predict(*p)[0], -self.alike(*p)))
 
 
 def render(video, song, i, j, lufs, out):
@@ -100,7 +124,8 @@ def render(video, song, i, j, lufs, out):
         frames = ['-filter_complex', audio, '-map', '0:v', '-c:v', 'copy']
     run('ffmpeg', '-y', '-i', video, '-i', song.file, '-i', song.file, *frames, '-map', '[a]',
         '-c:a', 'aac', '-b:a', '192k', '-t', f'{length:.3f}', '-movflags', '+faststart', out)
-    print(f'  {out}: cut {cut:.2f}s -> {resume:.2f}s (novelty {song.novelty(i):.3f} + {song.novelty(j):.3f}), '
+    score, kind = song.predict(i, j)
+    print(f'  {out}: cut {cut:.2f}s -> {resume:.2f}s ({kind}, predicted {score} of 3), '
           f'{length:.1f}s, last frame held {max(hold, 0):.1f}s')
 
 
@@ -118,9 +143,8 @@ def main():
     if video > song.end:
         # shortcut: no looping, a demo longer than the song fails; loop the song when one needs it.
         sys.exit(f'the demo ({video:.1f}s) is longer than the song ({song.end:.1f}s)')
-    # In listening rounds a late cut was heard and an early one was not. Keep it in the first third,
-    # after the song's opening phrase.
-    opening = song.beats[min(JUMP_BEATS, len(song.beats) - 1)]
+    # Keep the cut in the first third of the video, after the song's opening phrase and first seconds.
+    opening = max(song.beats[min(JUMP_BEATS, len(song.beats) - 1)], EARLIEST)
     pairs = song.cuts(video, earliest=opening, latest=max(video / 3, opening + 2))
     if not pairs:
         sys.exit('no cut point fits this demo length')
@@ -138,13 +162,16 @@ def main():
             song.judge(*pair, 'bad')
         return
     # Cuts a listener called harsh are out, one they called good comes first. Candidates are at least a
-    # phrase apart: the beat next to the best one is the same spot one beat off, not another option.
+    # phrase apart, so the listener gets three different spots.
     pairs = sorted((p for p in pairs if song.verdict(*p) != 'bad'), key=lambda p: song.verdict(*p) != 'good')
     picked = []
     for pair in pairs:
         if len(picked) < 3 and all(abs(pair[0] - other[0]) >= JUMP_BEATS for other in picked):
             picked.append(pair)
     base, ext = os.path.splitext(a.out)
+    if song.predict(*picked[0])[0] > 1.5:
+        print('No cut for this demo length is expected to sound smooth; these are the least bad. '
+              'Another demo length or another song may do better.')
     print('cut candidates (song time = video time, since the song starts at 0):')
     for i, j in picked:
         render(a.video, song, i, j, a.lufs, f'{base}-cut{song.beats[i]:.2f}{ext}')
