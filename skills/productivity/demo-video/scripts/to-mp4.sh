@@ -9,9 +9,10 @@ command -v ffprobe >/dev/null || { echo "ffprobe not found — it ships with ffm
 
 QP="${QP:-16}"
 FPS="${FPS:-25}"
+START="${START:-0}"   # seconds cut from the start of the first input: the page load before the first caption
 X264P="aq-mode=0:scenecut=0:keyint=600:no-mbtree=1"
 
-[ "$#" -ge 2 ] || { echo "usage: to-mp4.sh out.mp4 in1.webm [in2.webm ...]" >&2; exit 2; }
+[ "$#" -ge 2 ] || { echo "usage: [START=<s>] to-mp4.sh out.mp4 in1.webm [in2.webm ...]" >&2; exit 2; }
 out="$1"; shift
 
 # Default the canvas to the FIRST input's own size, so a take recorded at anything other than
@@ -37,11 +38,11 @@ echo "canvas ${W}x${H} (qp=${QP}, fps=${FPS})" >&2
 NORM="fps=${FPS},scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,setsar=1,setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709"
 
 if [ "$#" -eq 1 ]; then
-  ffmpeg -y -i "$1" -vf "$NORM" \
+  ffmpeg -y -ss "$START" -i "$1" -vf "$NORM" \
     -c:v libx264 -preset slow -qp "$QP" -x264-params "$X264P" \
     -pix_fmt yuv420p -movflags +faststart -an "$out"
 else
-  args=(); fc=""; labels=""; i=0
+  args=(-ss "$START"); fc=""; labels=""; i=0
   for f in "$@"; do
     args+=(-i "$f")
     fc+="[${i}:v]${NORM}[v${i}];"

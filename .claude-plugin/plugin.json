@@ -6,7 +6,7 @@
   },
   "repository": "https://github.com/flock-community/flock-skills",
   "license": "MIT",
-  "keywords": ["specification", "requirements", "prd", "design-doc", "adr", "screencast", "demo-video", "playwright"],
+  "keywords": ["specification", "requirements", "prd", "design-doc", "adr", "screencast", "demo-video", "playwright", "tauri"],
   "skills": [
     "./skills/engineering/spec",
     "./skills/engineering/preflight",

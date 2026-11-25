@@ -28,7 +28,9 @@ Pick the skills you want and which agents to install them on.
 
 - [demo-video](./skills/productivity/demo-video/SKILL.md): record a polished,
   flicker-free demo video (or GIF) of a running web app by driving it with
-  headless Playwright, then transcoding and frame-verifying the result.
+  headless Playwright, then transcoding and frame-verifying the result. Also
+  records a Tauri desktop app's native window, and puts a music bed from the
+  project's own song under the finished mp4.
 
 ## Use as a Claude Code plugin
 
@@ -59,7 +61,7 @@ flock-skills/
     │   ├── spec/                    # SKILL.md + references/ + schemas/ + scripts/ + template/
     │   └── preflight/               # SKILL.md + scripts/
     └── productivity/
-        └── demo-video/              # SKILL.md + REFERENCE.md + scripts/
+        └── demo-video/              # SKILL.md + REFERENCE.md + TAURI.md + MUSIC.md + scripts/
 ```
 
 Skills are grouped into category buckets. Each published skill is listed above

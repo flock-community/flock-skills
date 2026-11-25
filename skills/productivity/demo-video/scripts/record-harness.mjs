@@ -1,5 +1,5 @@
 // STEPS=/path/to/steps.mjs must default-export:
-//   async ({ page, caption, section, sleep, env, BASE }) => { ... }
+//   async ({ page, caption, section, sleep, env, BASE, click, type, scrollTo, moveTo, pan }) => { ... }
 import { createRequire } from 'node:module';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { resolve, dirname } from 'node:path';
@@ -32,6 +32,7 @@ const env = {
   SLOWMO: +(process.env.SLOWMO || 300),
   HEADLESS: process.env.HEADLESS !== '0',
   TIMEOUT: +(process.env.TIMEOUT || 20000),
+  ACCENT: process.env.ACCENT || '#ffcc00', // brand accent: caption border and click ring
   STORAGE_STATE: process.env.STORAGE_STATE, // reuse auth across segments: load if present, steps can save to it
   INJECT_CSS: process.env.INJECT_CSS, // CSS injected on every page load — e.g. flatten flickery modal backdrops
   // 'block' stops the app registering a service worker. Set it for any PWA whose network you are
@@ -48,7 +49,7 @@ const rand = (n) => (Math.random() * 2 - 1) * n;
 // A visible pointer that tracks real mouse events, so Playwright-driven moves/clicks read as a
 // person aiming a cursor (Chromium renders no pointer otherwise). Idempotent; re-run after nav.
 async function ensureCursor(page) {
-  await page.evaluate(() => {
+  await page.evaluate((accent) => {
     if (document.getElementById('__demo_cursor__')) return;
     const dot = document.createElement('div');
     dot.id = '__demo_cursor__';
@@ -64,7 +65,7 @@ async function ensureCursor(page) {
     ring.id = '__demo_ring__';
     ring.style.cssText =
       'position:fixed;top:0;left:0;z-index:2147483645;width:34px;height:34px;' +
-      'margin:-17px 0 0 -17px;border-radius:50%;border:2px solid #ffcc00;opacity:0;' +
+      'margin:-17px 0 0 -17px;border-radius:50%;border:2px solid ' + accent + ';opacity:0;' +
       'pointer-events:none;transform:translate(50vw,50vh) scale(.3)';
     document.body.append(ring, dot);
     addEventListener(
@@ -88,7 +89,7 @@ async function ensureCursor(page) {
       },
       true,
     );
-  });
+  }, env.ACCENT);
 }
 
 const asLoc = (page, target) =>
@@ -148,7 +149,7 @@ async function pan(page, dy, opts = {}) {
 // Fixed bottom-center caption pill. The DOM is wiped on every full navigation,
 // so this re-creates the element when missing — call it after each goto/route change.
 async function caption(page, text) {
-  await page.evaluate((t) => {
+  await page.evaluate(({ t, accent }) => {
     let el = document.getElementById('__demo_caption__');
     if (!el) {
       el = document.createElement('div');
@@ -158,13 +159,13 @@ async function caption(page, text) {
         'z-index:2147483647', 'background:rgba(20,20,22,0.92)', 'color:#fff',
         'font:600 18px/1.4 -apple-system,Segoe UI,Roboto,sans-serif',
         'padding:12px 22px', 'border-radius:10px', 'max-width:82vw', 'text-align:center',
-        'box-shadow:0 6px 24px rgba(0,0,0,0.35)', 'border-left:5px solid #ffcc00',
+        'box-shadow:0 6px 24px rgba(0,0,0,0.35)', 'border-left:5px solid ' + accent,
         'pointer-events:none',
       ].join(';');
       document.body.appendChild(el);
     }
     el.textContent = t;
-  }, text);
+  }, { t: text, accent: env.ACCENT });
 }
 
 // Wrap a logical beat so one bad selector logs + skips instead of aborting the take.

@@ -1,0 +1,8 @@
+{
+  "name": "tauri-demo-video-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "webdriverio": "9.32.0"
+  }
+}
