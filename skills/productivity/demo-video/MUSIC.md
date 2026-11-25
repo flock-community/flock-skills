@@ -12,7 +12,8 @@ This skill ships no song. The song belongs to the project that is being demoed:
   verdicts on cuts) written by `scripts/music/analyse.py`. The project's repository is the usual place, for example
   `docs/demo/music/theme.mp3` and `docs/demo/music/theme.json`. Any path works; the scripts only need the json.
 - The project's notes (its agent instructions file or agent memory) hold one line that names the json, for example
-  `Demo music: docs/demo/music/theme.json`. Recall it from there, as with the other project specifics.
+  `Demo music: docs/demo/music/theme.json` (a path from the repository root). Recall it from there, as with the
+  other project specifics. No notes file to write to? Tell the user the line.
 
 ## Setting up a song (once per project)
 
@@ -24,18 +25,20 @@ the instruments matched, and the script does not detect singing. Then:
    ```bash
    uv run "$SKILL_DIR/scripts/music/analyse.py" docs/demo/music/theme.mp3   # writes theme.json next to it
    ```
-2. Run a first listening round with the user right away (the pipeline below), on the demo at hand or on any mp4 of
-   a usual demo length. The script cannot hear whether a cut is smooth. It prints a predicted score per candidate
+2. Run a listening round with the user right away: steps 1 and 2 of the pipeline below, on the demo at hand or on
+   any mp4 of a usual demo length. With a demo at hand this is that demo's round, not an extra one. The script cannot hear whether a cut is smooth. It prints a predicted score per candidate
    (1 = not noticed, 3 = harsh), and in listening rounds about one prediction in five was off by a point or more.
    Ask about every candidate, not only for the winner: which cuts are smooth, which are harsh, and what the user
    hears.
 3. Pass the answer back with `--cut <s> --bad <s> ...`. The script saves the verdicts in the json: later rounds
    skip the harsh cuts and offer a known-good one first. Commit the json with the song. Running `analyse.py` again
-   overwrites the json and drops the verdicts.
+   overwrites the json and drops the verdicts. A verdict belongs to one cut and one resume point, so it applies
+   again only to a demo of about the same length.
 
 ## Pipeline
 
-1. **Candidates.** Writes the three best cut candidates as `<out>-cut<s>.mp4`:
+1. **Candidates.** Run it on the final, trimmed mp4. Writes up to three cut candidates as `<out>-cut<s>.mp4`, each
+   with its kind and predicted score. They can be up to one phrase longer than the demo (see Length):
    ```bash
    uv run "$SKILL_DIR/scripts/music/add-music.py" demo.mp4 demo-music.mp4 --song docs/demo/music/theme.json
    ```
@@ -46,7 +49,7 @@ the instruments matched, and the script does not detect singing. Then:
      --cut <s> --bad <s> <s>
    ```
 3. **Verify.** Check that the audio and video durations are equal
-   (`ffprobe -show_entries stream=codec_type,duration demo-music.mp4`) and look at the last frame. Put the exact
+   (`ffprobe -v error -show_entries stream=codec_type,duration -of csv=p=0 demo-music.mp4`) and look at the last frame. Put the exact
    `--cut` in the PR or the project's notes, so a regeneration needs no new round.
 
 ## Music rules
@@ -69,7 +72,8 @@ the instruments matched, and the script does not detect singing. Then:
   may then do better. Where the bar starts is a guess from the bass, and it can be wrong for a song.
 - **A cut on an action.** A smooth cut that falls on a visible action in the video (a click, a result that lands)
   reads as the video gaining energy at that moment. When two candidates are both smooth, prefer the one whose cut
-  time is closest to such a moment; the cut time is also the video time.
+  time is closest to such a moment; the cut time is also the video time. To see what is on screen then:
+  `ffmpeg -ss <s> -i demo.mp4 -frames:v 1 at-cut.png`.
 - **Length.** Whole phrases rarely fit exactly, so the last frame of the video is held for the rest: up to one
   phrase. The script re-encodes the video with the `to-mp4.sh` settings only when it holds a frame.
 - **Level.** One level for the whole video, default -18 LUFS for the whole song (`--lufs`); the cut excerpt can

@@ -101,9 +101,10 @@ Env: `BASE_URL`, `VIDEO_DIR`, `STEPS` (required), `SEGMENT` (free-form, read in 
 
 ### Code editors (Monaco, CodeMirror)
 An in-page code editor is not a form field, so three things differ:
-- **The `type` helper fails on it**: it calls `fill('')`, which needs an `<input>`, `<textarea>` or contenteditable. `click` a line of the editor, then `page.keyboard.type(text, { delay: 80 })`. Press `Escape` afterwards; the editor's suggestion popup otherwise stays in the take.
-- **A click cannot aim at a column.** After the click, place the caret through the editor's own API, e.g. Monaco: `page.evaluate(() => { const ed = monaco.editor.getEditors().find((e) => e.hasTextFocus()); ed.setPosition({ lineNumber: 1, column: 12 }); })`.
+- **The `type` helper fails on it**: it calls `fill('')`, which needs an `<input>`, `<textarea>` or contenteditable. `click` a line of the editor, then `page.keyboard.type(text, { delay: 80 })`. `slowMo` is added to every typed key (380 ms per key at the default); record with a lower `SLOWMO=` or drop the `delay` when the text is long. Press `Escape` afterwards; the editor's suggestion popup otherwise stays in the take.
+- **A click cannot aim at a column.** After the click, place the caret through the editor's own API, e.g. Monaco: `page.evaluate(() => { const ed = monaco.editor.getEditors().find((e) => e.hasTextFocus()); ed.setPosition({ lineNumber: 1, column: 12 }); })`. The global can be undefined while the page loads: wait on `window.monaco?.editor`.
 - **Only the visible lines are in the DOM, and the scroll offset survives a content change.** When the content is replaced by something shorter, the editor can show an empty area and a wait on the new text times out although the text is there. Reset the scroll (`ed.setScrollTop(0)`) or reveal the line (`ed.revealLineNearTop(n)`) before waiting on or showing a result.
+- **`pan` and the mouse wheel are unreliable over an editor**: it handles the wheel itself, and takes scrolled either a few pixels or to the end of the file. Scroll it through its API (`ed.revealLineInCenter(n)`, `ed.setScrollTop(px)`). Its lines can also fail a plain text match on spaces; match with a regex (`/name:\s+String/`).
 
 ### Caption bar
 A fixed bottom-center pill (`#__demo_caption__`, brand accent left border). The DOM is wiped on every full navigation, so `caption()` re-creates the element if missing — **call it again after each `page.goto`/route change**.
